@@ -1,20 +1,14 @@
 from modeles import EntreeSimulation, ResultatSimulation
-from utilitaires import arrondir_superieur
 
 
 class ServiceDimensionnement:
     def calculer(
         self,
         entrees: list[EntreeSimulation],
-        pas_arrondi_panneau_w: float,
-        pas_arrondi_batterie_wh: float,
         parametres: dict[str, float] | None = None,
     ) -> ResultatSimulation:
         if not entrees:
             raise ValueError("Aucune entree dans la simulation")
-
-        if pas_arrondi_panneau_w <= 0 or pas_arrondi_batterie_wh <= 0:
-            raise ValueError("Les pas d'arrondi doivent etre > 0")
 
         p = {
             "FACTEUR_PANNEAU_PRATIQUE": 0.4,
@@ -53,14 +47,8 @@ class ServiceDimensionnement:
         panneau_soir_theorique_w = puissance["SOIR"] / facteur_soir if puissance["SOIR"] > 0 else 0.0
         panneau_theorique_w = max(panneau_matin_theorique_w, panneau_soir_theorique_w)
 
-        panneau_pratique_achat_w = arrondir_superieur(
-            panneau_theorique_w / facteur_panneau_pratique,
-            pas_arrondi_panneau_w,
-        )
-        batterie_pratique_achat_wh = arrondir_superieur(
-            batterie_theorique_wh * facteur_marge_batterie,
-            pas_arrondi_batterie_wh,
-        )
+        panneau_pratique_achat_w = panneau_theorique_w / facteur_panneau_pratique
+        batterie_pratique_achat_wh = batterie_theorique_wh * facteur_marge_batterie
 
         return ResultatSimulation(
             energie_matin_wh=energie["MATIN"],

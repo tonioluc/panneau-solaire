@@ -139,6 +139,24 @@ class RepositorySqlServer:
         )
         self.cnxn.commit()
 
+    def modifier_entree(
+        self,
+        entree_id: int,
+        materiel: str,
+        puissance_w: float,
+        id_tranche_heure: int,
+        duree_h: float,
+    ):
+        self._executer(
+            """
+            UPDATE dbo.simulation_entree
+            SET materiel = ?, puissance_w = ?, id_tranche_heure = ?, duree_h = ?
+            WHERE id = ?
+            """,
+            [materiel, puissance_w, id_tranche_heure, duree_h, entree_id],
+        )
+        self.cnxn.commit()
+
     def supprimer_entree(self, entree_id: int):
         self._executer("DELETE FROM dbo.simulation_entree WHERE id = ?", [entree_id])
         self.cnxn.commit()

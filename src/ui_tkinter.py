@@ -59,6 +59,7 @@ class ApplicationTk(tk.Tk):
         self.var_puissance = tk.StringVar()
         self.var_tranche = tk.StringVar(value="MATIN")
         self.var_duree = tk.StringVar()
+        self.entree_en_edition_id = None
 
         ttk.Label(form, text="Materiel").grid(row=0, column=0, padx=4, pady=4)
         ttk.Entry(form, textvariable=self.var_materiel, width=22).grid(row=0, column=1, padx=4, pady=4)
@@ -69,11 +70,14 @@ class ApplicationTk(tk.Tk):
         self.cmb_tranches.grid(row=0, column=5, padx=4, pady=4)
         ttk.Label(form, text="Duree (h)").grid(row=0, column=6, padx=4, pady=4)
         ttk.Entry(form, textvariable=self.var_duree, width=10).grid(row=0, column=7, padx=4, pady=4)
-        ttk.Button(form, text="Ajouter", command=self.ajouter_entree).grid(row=0, column=8, padx=6, pady=4)
+        self.btn_ajouter = ttk.Button(form, text="Ajouter", command=self.ajouter_entree)
+        self.btn_ajouter.grid(row=0, column=8, padx=6, pady=4)
 
         actions = ttk.Frame(self.tab_entrees)
         actions.pack(fill="x", padx=8, pady=4)
-        ttk.Button(actions, text="Supprimer entree", command=self.supprimer_entree).pack(side="left")
+        ttk.Button(actions, text="Modifier entree", command=self.modifier_entree).pack(side="left", padx=4)
+        ttk.Button(actions, text="Annuler edition", command=self.annuler_edition).pack(side="left", padx=4)
+        ttk.Button(actions, text="Supprimer entree", command=self.supprimer_entree).pack(side="left", padx=4)
 
         self.tree_entrees = ttk.Treeview(
             self.tab_entrees,
@@ -91,19 +95,13 @@ class ApplicationTk(tk.Tk):
             self.tree_entrees.heading(col, text=col)
             self.tree_entrees.column(col, width=width)
         self.tree_entrees.pack(fill="both", expand=True, padx=8, pady=8)
+        self.tree_entrees.bind("<Double-1>", self.charger_pour_edition)
 
     def _build_tab_resultat(self):
         top = ttk.Frame(self.tab_resultat)
         top.pack(fill="x", padx=8, pady=8)
 
-        self.var_pas_panneau = tk.StringVar(value="50")
-        self.var_pas_batterie = tk.StringVar(value="100")
-
-        ttk.Label(top, text="Arrondi panneau (W)").grid(row=0, column=0, padx=4, pady=4)
-        ttk.Entry(top, textvariable=self.var_pas_panneau, width=10).grid(row=0, column=1, padx=4, pady=4)
-        ttk.Label(top, text="Arrondi batterie (Wh)").grid(row=0, column=2, padx=4, pady=4)
-        ttk.Entry(top, textvariable=self.var_pas_batterie, width=10).grid(row=0, column=3, padx=4, pady=4)
-        ttk.Button(top, text="Calculer", command=self.calculer).grid(row=0, column=4, padx=8, pady=4)
+        ttk.Button(top, text="Calculer", command=self.calculer).grid(row=0, column=0, padx=8, pady=4)
 
         self.txt_resultat = tk.Text(self.tab_resultat, wrap="word", height=28)
         self.txt_resultat.pack(fill="both", expand=True, padx=8, pady=8)
@@ -192,6 +190,29 @@ class ApplicationTk(tk.Tk):
                 ),
             )
 
+    def charger_pour_edition(self, event):
+        """Double-click sur une entree pour charger les données en édition"""
+        selection = self.tree_entrees.selection()
+        if not selection:
+            return
+        values = self.tree_entrees.item(selection[0])["values"]
+        self.entree_en_edition_id = int(values[0])
+        self.var_materiel.set(values[1])
+        self.var_puissance.set(values[2])
+        self.var_tranche.set(values[3])
+        self.var_duree.set(values[4])
+        self.btn_ajouter.config(text="Mettre à jour")
+
+    def annuler_edition(self):
+        """Annuler l'édition et revenir au formulaire vide"""
+        self.entree_en_edition_id = None
+        self.var_materiel.set("")
+        self.var_puissance.set("")
+        self.var_tranche.set("MATIN")
+        self.var_duree.set("")
+        self.btn_ajouter.config(text="Ajouter")
+        self.tree_entrees.selection_remove(self.tree_entrees.selection())
+
     def ajouter_entree(self):
         try:
             if self.simulation_active_id is None:
@@ -209,19 +230,38 @@ class ApplicationTk(tk.Tk):
             if puissance_w <= 0 or duree_h <= 0:
                 raise ValueError("Puissance et duree doivent etre > 0")
 
-            self.repository.ajouter_entree(
-                simulation_id=self.simulation_active_id,
-                materiel=materiel,
-                puissance_w=puissance_w,
-                id_tranche_heure=self.map_tranches[tranche],
-                duree_h=duree_h,
-            )
-            self.var_materiel.set("")
-            self.var_puissance.set("")
-            self.var_duree.set("")
+            if self.entree_en_edition_id:
+                # Mode modification
+                self.repository.modifier_entree(
+                    entree_id=self.entree_en_edition_id,
+                    materiel=materiel,
+                    puissance_w=puissance_w,
+                    id_tranche_heure=self.map_tranches[tranche],
+                    duree_h=duree_h,
+                )
+                self.annuler_edition()
+            else:
+                # Mode création
+                self.repository.ajouter_entree(
+                    simulation_id=self.simulation_active_id,
+                    materiel=materiel,
+                    puissance_w=puissance_w,
+                    id_tranche_heure=self.map_tranches[tranche],
+                    duree_h=duree_h,
+                )
+                self.var_materiel.set("")
+                self.var_puissance.set("")
+                self.var_duree.set("")
             self.rafraichir_entrees()
         except Exception as exc:
             messagebox.showerror("Entree", str(exc))
+
+    def modifier_entree(self):
+        """Valider la modification (même fonction que ajouter)"""
+        if self.entree_en_edition_id:
+            self.ajouter_entree()
+        else:
+            messagebox.showinfo("Modification", "Double-cliquez sur une entree pour l'editer")
 
     def supprimer_entree(self):
         try:
@@ -240,11 +280,9 @@ class ApplicationTk(tk.Tk):
                 raise ValueError("Selectionnez d'abord une simulation")
 
             entrees = self.repository.lister_entrees(self.simulation_active_id)
-            pas_panneau = float(self.var_pas_panneau.get())
-            pas_batterie = float(self.var_pas_batterie.get())
             parametres = self.repository.charger_parametres()
 
-            resultat = self.service.calculer(entrees, pas_panneau, pas_batterie, parametres)
+            resultat = self.service.calculer(entrees, parametres)
 
             lignes = [
                 "RESULTAT SIMULATION\n",
