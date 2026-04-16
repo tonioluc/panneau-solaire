@@ -1,0 +1,48 @@
+Panneau solaire
+
+BUT :
+-input : tout les materiel que vous utilisez avec les heures 
+	exemple : mampiasa tele aho rehefa maraina ny andro : adin 2 (TV : 75 Watt)
+	exemple : mampiasa tele aho rehefa hariva ny andro : adin 3 (TV : 75 Watt)
+	exemple : mampiasa frigo aho rehefa maraina ny andro : adin 3 (TV : 65 Watt)
+	exemple : mampiasa ordinateur aho rehefa maraina ny andro : adin 1 (Ordi : 85 Watt)
+	exemple : mampiasa ordinateur aho rehefa hariva ny andro : adin 4 (Ordi : 85 Watt)
+
+=> Mampiditra  mateirel ampiasana miaraka @ lera sy ny puissance any sy ny duree any
+
+-Ouput :
+	-Mi propose ilay systeme hoe izao watt ny puissance an'ny panneau solaire mila vidianao
+	 de izao WattHeure ny batterie mila vidianao raha ireo materiel anao ireo no analysena.
+=> Panneau(puisaance kwt) sy batterie 
+
+Panneau solaire manome puissance en watt
+Batterie magasinage puissance , manome unite Watt/Heure na kWattHeure 
+ ex : batterie 1kwtheure hi branchena zavatra 100 Watt => Mahatana 10h duree du batterie
+ ex : batterie 1kwtheure hi branchena zavatra 1000 Watt => Mahatana 1h duree du batterie
+ 
+Inversion : 
+	rehefa hi charge anleh batterie ka manana puissance 1000Watt hichargena azy de adin 1 de feno le batterie
+	rehefa hi charge anleh batterie ka manana puissance 500Watt hichargena azy de adin 2 de feno le batterie
+	rehefa hi charge anleh batterie ka manana puissance 100Watt hichargena azy de adin 10 de feno le batterie
+	
+	
+Ilay input ireo ampiana tranche kely :
+	-Maraina : 06h - 17h (tranche 1) Panneau solaire no miasa
+	-Hariva : 17h - 19h (tranche 2) 50% an'ilay puissance an'ilay panneau no miasa
+	-Alina : 19h - 06h (tranche 3) Batterie fotsiny no miasa
+	
+Mila sady micharge ny batterie @ ilay panneau panneau rehefa maraina 
+
+Pratiquement :
+-Panneau solaire : 40% ny puissance ihany no miasa
+	ex : 1 panneau 2 500 Watt => ca va vous donner 1 000 Watt
+-Batterie : rehefa vo calcul le batterie de ampiana 50% iny 
+	ex : 1kwtheure tokony ampiasaina => tokony vidiana 1,5 kwh
+	
+Bonus : 
+-Panneau : hariva 
+	ex : theorique :
+			-journee : 1 000Watt no nampiasaina
+			-rehefa 17h - 19h : 50% ampiasainleh panneau 
+		
+Rehefa vita mihitsy ny calcul theorique zay vao manao an'ilay proposition pratique
