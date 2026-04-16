@@ -31,6 +31,7 @@ htmlcov/
 # Environment and local secrets
 .env
 .env.*
+ui_style.json
 
 # OS files
 .DS_Store
