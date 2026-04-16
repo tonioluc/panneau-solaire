@@ -1,0 +1,36 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Simulation:
+    id: int
+    titre: str
+    notes: str
+
+
+@dataclass(frozen=True)
+class EntreeSimulation:
+    id: int
+    simulation_id: int
+    materiel: str
+    puissance_w: float
+    id_tranche_heure: int
+    tranche: str
+    duree_h: float
+
+
+@dataclass(frozen=True)
+class ResultatSimulation:
+    energie_matin_wh: float
+    energie_soir_wh: float
+    energie_nuit_wh: float
+    puissance_matin_w: float
+    puissance_soir_w: float
+    puissance_nuit_w: float
+    batterie_theorique_wh: float
+    puissance_charge_batterie_w: float
+    panneau_matin_theorique_w: float
+    panneau_soir_theorique_w: float
+    panneau_theorique_w: float
+    panneau_pratique_achat_w: float
+    batterie_pratique_achat_wh: float
