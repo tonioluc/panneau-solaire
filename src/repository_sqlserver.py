@@ -74,6 +74,8 @@ class RepositorySqlServer:
             "FACTEUR_PANNEAU_SOIR": 0.5,
             "FACTEUR_MARGE_BATTERIE": 1.5,
             "DUREE_MATIN_H": 11.0,
+            "RATIO_COUVERTURE_PANNEAU_40": 0.4,
+            "RATIO_COUVERTURE_PANNEAU_30": 0.3,
         }
         for code, valeur in cur.fetchall():
             base[str(code)] = float(valeur)

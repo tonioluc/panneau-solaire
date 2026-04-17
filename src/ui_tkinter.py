@@ -383,8 +383,25 @@ class ApplicationTk(tk.Tk):
         practical_values = tk.Frame(practical_bg, bg=self.theme.get("primary"))
         practical_values.pack(fill="x", padx=20, pady=(0, 18))
 
-        self._hero_metric(practical_values, "PANNEAU A ACHETER", "panneau_pratique_kw", "kW", 0)
-        self._hero_metric(practical_values, "BATTERIE A ACHETER", "batterie_pratique_kwh", "kWh", 1)
+        self._hero_metric(practical_values, "BATTERIE A ACHETER", "batterie_pratique_kwh", "kWh", 0)
+
+        alternatives = tk.Frame(practical_bg, bg=self.theme.get("primary"))
+        alternatives.pack(fill="x", padx=20, pady=(0, 18))
+
+        self._proposal_metric(
+            alternatives,
+            "PROPOSITION PANNEAU (COUVERTURE 40%)",
+            "panneau_40pct_kw",
+            "kW",
+            0,
+        )
+        self._proposal_metric(
+            alternatives,
+            "PROPOSITION PANNEAU (COUVERTURE 30%)",
+            "panneau_30pct_kw",
+            "kW",
+            1,
+        )
 
         grid.columnconfigure(0, weight=1)
         grid.columnconfigure(1, weight=1)
@@ -478,6 +495,49 @@ class ApplicationTk(tk.Tk):
             fg="#b7ebce",
             font=(self.theme.get("font_body"), 17),
         ).pack(side="left", padx=(6, 0), pady=(10, 0))
+
+        self.result_labels[key] = val
+        parent.columnconfigure(col, weight=1)
+
+    def _proposal_metric(self, parent: tk.Frame, title: str, key: str, unit: str, col: int):
+        section = tk.Frame(
+            parent,
+            bg=self.theme.get("primary_container"),
+            highlightthickness=1,
+            highlightbackground=self.theme.get("primary"),
+        )
+        section.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 12, 0))
+
+        tk.Label(
+            section,
+            text=title,
+            bg=self.theme.get("primary_container"),
+            fg=self.theme.get("on_primary_container"),
+            font=(self.theme.get("font_body"), 10, "bold"),
+            anchor="w",
+        ).pack(fill="x", padx=12, pady=(10, 6))
+
+        value_line = tk.Frame(section, bg=self.theme.get("primary_container"))
+        value_line.pack(fill="x", padx=12)
+
+        val = tk.Label(
+            value_line,
+            text="0.000",
+            bg=self.theme.get("primary_container"),
+            fg=self.theme.get("primary"),
+            font=(self.theme.get("font_display"), 20, "bold"),
+        )
+        val.pack(side="left")
+
+        tk.Label(
+            value_line,
+            text=unit,
+            bg=self.theme.get("primary_container"),
+            fg=self.theme.get("on_primary_container"),
+            font=(self.theme.get("font_body"), 12),
+        ).pack(side="left", padx=(6, 0), pady=(6, 0))
+
+        tk.Frame(section, bg=self.theme.get("primary_container"), height=8).pack(fill="x")
 
         self.result_labels[key] = val
         parent.columnconfigure(col, weight=1)
@@ -682,5 +742,7 @@ class ApplicationTk(tk.Tk):
 
             self._set_result_value("panneau_pratique_kw", resultat.panneau_pratique_achat_w / 1000.0, 3)
             self._set_result_value("batterie_pratique_kwh", resultat.batterie_pratique_achat_wh / 1000.0, 3)
+            self._set_result_value("panneau_40pct_kw", resultat.panneau_proposition_40_w / 1000.0, 3)
+            self._set_result_value("panneau_30pct_kw", resultat.panneau_proposition_30_w / 1000.0, 3)
         except Exception as exc:
             messagebox.showerror("Calcul", str(exc))

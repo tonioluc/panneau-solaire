@@ -48,3 +48,17 @@ BEGIN
     VALUES ('DUREE_MATIN_H', 'Duree de la tranche matin en heures pour la charge batterie', 11.0);
 END;
 GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.parametre WHERE code = 'RATIO_COUVERTURE_PANNEAU_40')
+BEGIN
+    INSERT INTO dbo.parametre (code, description, valeur)
+    VALUES ('RATIO_COUVERTURE_PANNEAU_40', 'Part exploitable du panneau pour la proposition 40%', 0.4);
+END;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.parametre WHERE code = 'RATIO_COUVERTURE_PANNEAU_30')
+BEGIN
+    INSERT INTO dbo.parametre (code, description, valeur)
+    VALUES ('RATIO_COUVERTURE_PANNEAU_30', 'Part exploitable du panneau pour la proposition 30%', 0.3);
+END;
+GO

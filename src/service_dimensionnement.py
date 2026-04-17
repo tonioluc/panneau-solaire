@@ -15,6 +15,8 @@ class ServiceDimensionnement:
             "FACTEUR_PANNEAU_SOIR": 0.5,
             "FACTEUR_MARGE_BATTERIE": 1.5,
             "DUREE_MATIN_H": 11.0,
+            "RATIO_COUVERTURE_PANNEAU_40": 0.4,
+            "RATIO_COUVERTURE_PANNEAU_30": 0.3,
         }
         if parametres:
             p.update(parametres)
@@ -37,8 +39,17 @@ class ServiceDimensionnement:
         facteur_soir = p["FACTEUR_PANNEAU_SOIR"]
         facteur_panneau_pratique = p["FACTEUR_PANNEAU_PRATIQUE"]
         facteur_marge_batterie = p["FACTEUR_MARGE_BATTERIE"]
+        ratio_couverture_40 = p["RATIO_COUVERTURE_PANNEAU_40"]
+        ratio_couverture_30 = p["RATIO_COUVERTURE_PANNEAU_30"]
 
-        if duree_matin_h <= 0 or facteur_soir <= 0 or facteur_panneau_pratique <= 0 or facteur_marge_batterie <= 0:
+        if (
+            duree_matin_h <= 0
+            or facteur_soir <= 0
+            or facteur_panneau_pratique <= 0
+            or facteur_marge_batterie <= 0
+            or ratio_couverture_40 <= 0
+            or ratio_couverture_30 <= 0
+        ):
             raise ValueError("Parametres invalides dans la table parametre")
 
         puissance_charge_batterie_w = batterie_theorique_wh / duree_matin_h if batterie_theorique_wh > 0 else 0.0
@@ -49,6 +60,8 @@ class ServiceDimensionnement:
 
         panneau_pratique_achat_w = panneau_theorique_w / facteur_panneau_pratique
         batterie_pratique_achat_wh = batterie_theorique_wh * facteur_marge_batterie
+        panneau_proposition_40_w = panneau_theorique_w / ratio_couverture_40
+        panneau_proposition_30_w = panneau_theorique_w / ratio_couverture_30
 
         return ResultatSimulation(
             energie_matin_wh=energie["MATIN"],
@@ -64,4 +77,6 @@ class ServiceDimensionnement:
             panneau_theorique_w=panneau_theorique_w,
             panneau_pratique_achat_w=panneau_pratique_achat_w,
             batterie_pratique_achat_wh=batterie_pratique_achat_wh,
+            panneau_proposition_40_w=panneau_proposition_40_w,
+            panneau_proposition_30_w=panneau_proposition_30_w,
         )

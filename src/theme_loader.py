@@ -15,6 +15,7 @@ class ThemeLoader:
             "primary": "#006c49",
             "primary_container": "#10b981",
             "on_primary": "#ffffff",
+            "on_primary_container": "#0b1c30",
             "secondary_container": "#b7ebce",
             "outline_variant": "#9fb1c8",
             "danger": "#a43a3a",
