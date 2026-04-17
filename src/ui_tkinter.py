@@ -254,13 +254,20 @@ class ApplicationTk(tk.Tk):
         controls.pack(fill="x", padx=10, pady=10)
         self._build_simulation_controls(controls)
 
-        self.tab_entrees = ttk.Frame(left, style="Card.TFrame")
-        self.tab_entrees.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        left_tabs = ttk.Notebook(left)
+        left_tabs.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+
+        self.tab_entrees = ttk.Frame(left_tabs, style="Card.TFrame")
+        self.tab_types_panneau = ttk.Frame(left_tabs, style="App.TFrame")
+
+        left_tabs.add(self.tab_entrees, text="Entrees")
+        left_tabs.add(self.tab_types_panneau, text="Types Panneau")
 
         self.tab_resultat = ttk.Frame(right, style="WhiteCard.TFrame")
         self.tab_resultat.pack(fill="both", expand=True, padx=10, pady=10)
 
         self._build_tab_entrees()
+        self._build_tab_types_panneau()
         self._build_tab_resultat()
 
     def _build_tab_entrees(self):
@@ -453,8 +460,6 @@ class ApplicationTk(tk.Tk):
         self.tree_types_panneau.pack(fill="both", expand=True, padx=12, pady=12)
         self.tree_types_panneau.bind("<Double-1>", self.charger_type_pour_edition)
 
-        self.rafraichir_types_panneau()
-
     def _metric_card(self, parent: ttk.Frame, title: str) -> ttk.Frame:
         frame = ttk.Frame(parent, style="Card.TFrame")
         ttk.Label(frame, text=title, style="Section.TLabel").grid(row=0, column=0, columnspan=3, sticky="w", padx=14, pady=(12, 8))
@@ -595,6 +600,7 @@ class ApplicationTk(tk.Tk):
             self.repository.connecter()
             self._charger_tranches()
             self.rafraichir_simulations()
+            self.rafraichir_types_panneau()
         except Exception as exc:
             messagebox.showerror(
                 "Base de donnees",
@@ -878,6 +884,10 @@ class ApplicationTk(tk.Tk):
         self.tree_types_panneau.selection_remove(self.tree_types_panneau.selection())
 
     def rafraichir_types_panneau(self):
+        # L'UI peut être construite avant la connexion DB; on évite un popup inutile.
+        if self.repository.cnxn is None:
+            return
+
         for item in self.tree_types_panneau.get_children():
             self.tree_types_panneau.delete(item)
         try:
@@ -928,7 +938,7 @@ class ApplicationTk(tk.Tk):
 
                 val = tk.Label(
                     value_line,
-                    text=f"{prop.quantite_require:.1f}",
+                    text=f"{prop.quantite_require:.0f}",
                     bg=section.cget("bg"),
                     fg=self.theme.get("primary") if prop.est_recommande else self.theme.get("on_surface"),
                     font=(self.theme.get("font_display"), 14, "bold"),
