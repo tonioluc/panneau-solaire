@@ -5,6 +5,10 @@ IF OBJECT_ID('dbo.simulation_entree', 'U') IS NOT NULL
     DROP TABLE dbo.simulation_entree;
 GO
 
+IF OBJECT_ID('dbo.type_panneau', 'U') IS NOT NULL
+    DROP TABLE dbo.type_panneau;
+GO
+
 IF OBJECT_ID('dbo.parametre', 'U') IS NOT NULL
     DROP TABLE dbo.parametre;
 GO
@@ -62,6 +66,24 @@ GO
 
 CREATE INDEX idx_simulation_entree_simulation_id
     ON dbo.simulation_entree(simulation_id);
+GO
+
+CREATE TABLE dbo.type_panneau (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    libelle NVARCHAR(100) NOT NULL,
+    ratio_couverture DECIMAL(5,3) NOT NULL,
+    energie_unitaire_wh DECIMAL(10,2) NOT NULL,
+    prix_unitaire DECIMAL(10,2) NOT NULL,
+    cree_le DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT uq_type_panneau_libelle UNIQUE (libelle),
+    CONSTRAINT ck_type_panneau_ratio CHECK (ratio_couverture > 0 AND ratio_couverture <= 1),
+    CONSTRAINT ck_type_panneau_energie CHECK (energie_unitaire_wh > 0),
+    CONSTRAINT ck_type_panneau_prix CHECK (prix_unitaire >= 0)
+);
+GO
+
+CREATE INDEX idx_type_panneau_libelle
+    ON dbo.type_panneau(libelle);
 GO
 
 CREATE INDEX idx_parametre_code

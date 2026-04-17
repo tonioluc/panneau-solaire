@@ -62,3 +62,17 @@ BEGIN
     VALUES ('RATIO_COUVERTURE_PANNEAU_30', 'Part exploitable du panneau pour la proposition 30%', 0.3);
 END;
 GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.type_panneau WHERE libelle = 'Panneau Standard 40%')
+BEGIN
+    INSERT INTO dbo.type_panneau (libelle, ratio_couverture, energie_unitaire_wh, prix_unitaire)
+    VALUES ('Panneau Standard 40%', 0.4, 100.0, 150.0);
+END;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.type_panneau WHERE libelle = 'Panneau Economique 30%')
+BEGIN
+    INSERT INTO dbo.type_panneau (libelle, ratio_couverture, energie_unitaire_wh, prix_unitaire)
+    VALUES ('Panneau Economique 30%', 0.3, 80.0, 100.0);
+END;
+GO

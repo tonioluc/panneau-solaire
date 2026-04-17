@@ -3,7 +3,7 @@ from datetime import time
 
 import pyodbc
 
-from modeles import EntreeSimulation, Simulation, TrancheHoraire
+from modeles import EntreeSimulation, Simulation, TrancheHoraire, TypePanneau
 
 
 class RepositorySqlServer:
@@ -189,3 +189,68 @@ class RepositorySqlServer:
     def rollback(self):
         if self.cnxn is not None:
             self.cnxn.rollback()
+
+    def lister_types_panneau(self) -> list[TypePanneau]:
+        """Récupère tous les types de panneaux."""
+        cur = self._executer(
+            """
+            SELECT id, libelle, ratio_couverture, energie_unitaire_wh, prix_unitaire
+            FROM dbo.type_panneau
+            ORDER BY libelle
+            """
+        )
+        return [
+            TypePanneau(
+                id=int(r[0]),
+                libelle=str(r[1]),
+                ratio_couverture=float(r[2]),
+                energie_unitaire_wh=float(r[3]),
+                prix_unitaire=float(r[4]),
+            )
+            for r in cur.fetchall()
+        ]
+
+    def creer_type_panneau(
+        self,
+        libelle: str,
+        ratio_couverture: float,
+        energie_unitaire_wh: float,
+        prix_unitaire: float,
+    ) -> int:
+        """Crée un nouveau type de panneau."""
+        cur = self._executer(
+            """
+            INSERT INTO dbo.type_panneau
+            (libelle, ratio_couverture, energie_unitaire_wh, prix_unitaire)
+            OUTPUT INSERTED.id
+            VALUES (?, ?, ?, ?)
+            """,
+            [libelle, ratio_couverture, energie_unitaire_wh, prix_unitaire],
+        )
+        type_id = int(cur.fetchone()[0])
+        self.cnxn.commit()
+        return type_id
+
+    def modifier_type_panneau(
+        self,
+        type_id: int,
+        libelle: str,
+        ratio_couverture: float,
+        energie_unitaire_wh: float,
+        prix_unitaire: float,
+    ):
+        """Modifie un type de panneau existant."""
+        self._executer(
+            """
+            UPDATE dbo.type_panneau
+            SET libelle = ?, ratio_couverture = ?, energie_unitaire_wh = ?, prix_unitaire = ?
+            WHERE id = ?
+            """,
+            [libelle, ratio_couverture, energie_unitaire_wh, prix_unitaire, type_id],
+        )
+        self.cnxn.commit()
+
+    def supprimer_type_panneau(self, type_id: int):
+        """Supprime un type de panneau."""
+        self._executer("DELETE FROM dbo.type_panneau WHERE id = ?", [type_id])
+        self.cnxn.commit()

@@ -27,6 +27,27 @@ class TrancheHoraire:
 
 
 @dataclass(frozen=True)
+class TypePanneau:
+    id: int
+    libelle: str
+    ratio_couverture: float
+    energie_unitaire_wh: float
+    prix_unitaire: float
+
+
+@dataclass(frozen=True)
+class PropositionPanneau:
+    id_type_panneau: int
+    libelle_type: str
+    ratio_couverture: float
+    puissance_propose_w: float
+    quantite_require: float
+    prix_unitaire: float
+    prix_total: float
+    est_recommande: bool
+
+
+@dataclass(frozen=True)
 class ResultatSimulation:
     energie_matin_wh: float
     energie_soir_wh: float
@@ -42,5 +63,4 @@ class ResultatSimulation:
     panneau_pratique_achat_w: float
     batterie_pratique_achat_wh: float
     convertisseur_propose_w: float
-    panneau_proposition_40_w: float
-    panneau_proposition_30_w: float
+    propositions_panneau: list['PropositionPanneau']

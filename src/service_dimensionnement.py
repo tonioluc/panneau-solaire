@@ -1,4 +1,6 @@
-from modeles import EntreeSimulation, ResultatSimulation, TrancheHoraire
+from math import floor
+
+from modeles import EntreeSimulation, ResultatSimulation, TrancheHoraire, TypePanneau, PropositionPanneau
 
 
 class ServiceDimensionnement:
@@ -53,6 +55,7 @@ class ServiceDimensionnement:
         entrees: list[EntreeSimulation],
         parametres: dict[str, float] | None = None,
         tranches: list[TrancheHoraire] | None = None,
+        types_panneau: list[TypePanneau] | None = None,
     ) -> ResultatSimulation:
         if not entrees:
             raise ValueError("Aucune entree dans la simulation")
@@ -117,8 +120,31 @@ class ServiceDimensionnement:
         panneau_pratique_achat_w = panneau_theorique_w / facteur_panneau_pratique
         batterie_pratique_achat_wh = batterie_theorique_wh * facteur_marge_batterie
         convertisseur_propose_w = max(puissance["MATIN"], puissance["SOIR"]) * 2
-        panneau_proposition_40_w = panneau_theorique_w / ratio_couverture_40
-        panneau_proposition_30_w = panneau_theorique_w / ratio_couverture_30
+
+        propositions_panneau: list[PropositionPanneau] = []
+        if types_panneau:
+            propositions_temporaires = []
+            for type_p in types_panneau:
+                quantite = floor(panneau_theorique_w / (type_p.ratio_couverture * type_p.energie_unitaire_wh))
+                prix_total = quantite * type_p.prix_unitaire
+                prop = PropositionPanneau(
+                    id_type_panneau=type_p.id,
+                    libelle_type=type_p.libelle,
+                    ratio_couverture=type_p.ratio_couverture,
+                    puissance_propose_w=panneau_theorique_w,
+                    quantite_require=quantite,
+                    prix_unitaire=type_p.prix_unitaire,
+                    prix_total=prix_total,
+                    est_recommande=False,
+                )
+                propositions_temporaires.append(prop)
+
+            if propositions_temporaires:
+                prix_min = min(p.prix_total for p in propositions_temporaires)
+                propositions_panneau = [
+                    p._replace(est_recommande=(p.prix_total == prix_min))
+                    for p in propositions_temporaires
+                ]
 
         return ResultatSimulation(
             energie_matin_wh=energie["MATIN"],
@@ -135,6 +161,5 @@ class ServiceDimensionnement:
             panneau_pratique_achat_w=panneau_pratique_achat_w,
             batterie_pratique_achat_wh=batterie_pratique_achat_wh,
             convertisseur_propose_w=convertisseur_propose_w,
-            panneau_proposition_40_w=panneau_proposition_40_w,
-            panneau_proposition_30_w=panneau_proposition_30_w,
+            propositions_panneau=propositions_panneau,
         )
