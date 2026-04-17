@@ -1,4 +1,5 @@
-from math import floor
+from math import  ceil
+from dataclasses import replace
 
 from modeles import EntreeSimulation, ResultatSimulation, TrancheHoraire, TypePanneau, PropositionPanneau
 
@@ -125,7 +126,7 @@ class ServiceDimensionnement:
         if types_panneau:
             propositions_temporaires = []
             for type_p in types_panneau:
-                quantite = floor(panneau_theorique_w / (type_p.ratio_couverture * type_p.energie_unitaire_wh))
+                quantite =  ceil(panneau_theorique_w / (type_p.ratio_couverture * type_p.energie_unitaire_wh))
                 prix_total = quantite * type_p.prix_unitaire
                 prop = PropositionPanneau(
                     id_type_panneau=type_p.id,
@@ -142,7 +143,7 @@ class ServiceDimensionnement:
             if propositions_temporaires:
                 prix_min = min(p.prix_total for p in propositions_temporaires)
                 propositions_panneau = [
-                    p._replace(est_recommande=(p.prix_total == prix_min))
+                    replace(p, est_recommande=(p.prix_total == prix_min))
                     for p in propositions_temporaires
                 ]
 

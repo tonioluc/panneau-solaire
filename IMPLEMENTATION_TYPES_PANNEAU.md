@@ -11,12 +11,12 @@ Le système permet maintenant de gérer **plusieurs types de panneaux solaires**
 - `libelle` (NVARCHAR): Nom du type (ex: "Panneau Premium 50%")
 - `ratio_couverture` (DECIMAL): Ratio d'utilisation (0-1)
 - `energie_unitaire_wh` (DECIMAL): Énergie générée par unité (Wh)
-- `prix_unitaire` (DECIMAL): Prix unitaire (€)
+- `prix_unitaire` (DECIMAL): Prix unitaire ( Ar)
 - `cree_le` (DATETIME2): Timestamp de création
 
 #### Données initiales
-- **Panneau Standard 40%**: ratio=0.4, énergie=100 Wh, prix=150€
-- **Panneau Economique 30%**: ratio=0.3, énergie=80 Wh, prix=100€
+- **Panneau Standard 40%**: ratio=0.4, énergie=100 Wh, prix=150 Ar
+- **Panneau Economique 30%**: ratio=0.3, énergie=80 Wh, prix=100 Ar
 
 ### 2. Modèles de Données (src/modeles.py)
 
@@ -95,7 +95,7 @@ Complète gestion CRUD dans le même style que l'onglet "Entrees":
 - Libelle (texte)
 - Ratio (0-1)
 - Energie unitaire (Wh)
-- Prix unitaire (€)
+- Prix unitaire ( Ar)
 
 **Table Treeview**:
 - Affiche tous les types avec colonnes: id, libelle, ratio, energie, prix
@@ -107,7 +107,7 @@ Complète gestion CRUD dans le même style que l'onglet "Entrees":
 - **Un bloc par type**: Chaque type affiche:
   - Titre avec libelle + ratio + "✓ MEILLEUR PRIX" si recommandé
   - Quantité nécessaire (en unités)
-  - Prix total (€)
+  - Prix total ( Ar)
 - **Styling**:
   - Blocs recommandés: fond `primary_container` + texte saillant
   - Autres blocs: fond neutre
@@ -144,19 +144,19 @@ Complète gestion CRUD dans le même style que l'onglet "Entrees":
 ## Exemple Complet
 
 **État initial**: 2 panneaux en BD
-- Panneau Standard 40% (ratio=0.4, 100 Wh, 150€)
-- Panneau Economique 30% (ratio=0.3, 80 Wh, 100€)
+- Panneau Standard 40% (ratio=0.4, 100 Wh, 150 Ar)
+- Panneau Economique 30% (ratio=0.3, 80 Wh, 100 Ar)
 
 **Calcul avec charge**: 1000W pendant 8h → 8000 Wh
 
 **Résultats du calcul**:
 1. Panneau Standard 40%:
    - Quantité = 8000 / (0.4 * 100) = 200 unités
-   - Prix = 200 * 150 = 30000€ ❌
+   - Prix = 200 * 150 = 30000 Ar ❌
 
 2. Panneau Economique 30% (RECOMMANDÉ ✓):
    - Quantité = 8000 / (0.3 * 80) = 333.3 unités
-   - Prix = 333.3 * 100 = 33330€ ❌
+   - Prix = 333.3 * 100 = 33330 Ar ❌
 
 *Note: Chiffres illustratifs, ajustez les parametres réels*
 

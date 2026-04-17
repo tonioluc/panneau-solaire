@@ -227,7 +227,7 @@ class ApplicationTk(tk.Tk):
 
         tk.Label(
             hero,
-            text="ENERGY STUDIO",
+            text="3276",
             bg=self.theme.get("primary"),
             fg=self.theme.get("on_primary"),
             font=(self.theme.get("font_display"), 24, "bold"),
@@ -422,7 +422,7 @@ class ApplicationTk(tk.Tk):
         ttk.Label(form_card, text="Energie W(Wh)", style="Muted.TLabel").grid(row=1, column=4, padx=12, pady=6, sticky="w")
         ttk.Entry(form_card, textvariable=self.var_type_energie, width=10, style="App.TEntry").grid(row=1, column=5, padx=6, pady=6, sticky="w")
 
-        ttk.Label(form_card, text="Prix (€)", style="Muted.TLabel").grid(row=1, column=6, padx=12, pady=6, sticky="w")
+        ttk.Label(form_card, text="Prix ( Ar)", style="Muted.TLabel").grid(row=1, column=6, padx=12, pady=6, sticky="w")
         ttk.Entry(form_card, textvariable=self.var_type_prix, width=10, style="App.TEntry").grid(row=1, column=7, padx=6, pady=6, sticky="w")
 
         ttk.Button(form_card, text="Ajouter", command=self.ajouter_type_panneau, style="Primary.TButton").grid(
@@ -955,7 +955,7 @@ class ApplicationTk(tk.Tk):
 
                 tk.Label(
                     section,
-                    text=f"Prix: {prop.prix_total:.2f}€",
+                    text=f"Prix: {prop.prix_total:.2f} Ar",
                     bg=section.cget("bg"),
                     fg=self.theme.get("on_primary_container") if prop.est_recommande else self.theme.get("on_surface_muted"),
                     font=(self.theme.get("font_body"), 9),
