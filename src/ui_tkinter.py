@@ -1,4 +1,5 @@
 import tkinter as tk
+from datetime import datetime
 from tkinter import messagebox, ttk
 
 from repository_sqlserver import RepositorySqlServer
@@ -22,7 +23,6 @@ class ApplicationTk(tk.Tk):
 
         self.simulation_active_id: int | None = None
         self.map_simulations: dict[str, int] = {}
-        self.map_tranches: dict[str, int] = {}
         self.tranches_disponibles: list[str] = ["MATIN", "SOIR", "NUIT"]
 
         self.entree_en_edition_id: int | None = None
@@ -270,8 +270,8 @@ class ApplicationTk(tk.Tk):
 
         self.var_materiel = tk.StringVar()
         self.var_puissance = tk.StringVar()
-        self.var_tranche = tk.StringVar(value="MATIN")
-        self.var_duree = tk.StringVar()
+        self.var_heure_debut = tk.StringVar()
+        self.var_heure_fin = tk.StringVar()
 
         ttk.Label(form_card, text="Materiel", style="Muted.TLabel").grid(row=1, column=0, padx=12, pady=6, sticky="w")
         ttk.Entry(form_card, textvariable=self.var_materiel, width=22, style="App.TEntry").grid(row=1, column=1, padx=6, pady=6, sticky="w")
@@ -279,19 +279,11 @@ class ApplicationTk(tk.Tk):
         ttk.Label(form_card, text="Puissance (W)", style="Muted.TLabel").grid(row=1, column=2, padx=12, pady=6, sticky="w")
         ttk.Entry(form_card, textvariable=self.var_puissance, width=10, style="App.TEntry").grid(row=1, column=3, padx=6, pady=6, sticky="w")
 
-        ttk.Label(form_card, text="Tranche", style="Muted.TLabel").grid(row=1, column=4, padx=12, pady=6, sticky="w")
-        self.cmb_tranches = ttk.Combobox(
-            form_card,
-            textvariable=self.var_tranche,
-            values=self.tranches_disponibles,
-            width=10,
-            state="readonly",
-            style="App.TCombobox",
-        )
-        self.cmb_tranches.grid(row=1, column=5, padx=6, pady=6, sticky="w")
+        ttk.Label(form_card, text="Heure debut (HH:MM)", style="Muted.TLabel").grid(row=1, column=4, padx=12, pady=6, sticky="w")
+        ttk.Entry(form_card, textvariable=self.var_heure_debut, width=10, style="App.TEntry").grid(row=1, column=5, padx=6, pady=6, sticky="w")
 
-        ttk.Label(form_card, text="Duree (h)", style="Muted.TLabel").grid(row=1, column=6, padx=12, pady=6, sticky="w")
-        ttk.Entry(form_card, textvariable=self.var_duree, width=10, style="App.TEntry").grid(row=1, column=7, padx=6, pady=6, sticky="w")
+        ttk.Label(form_card, text="Heure fin (HH:MM)", style="Muted.TLabel").grid(row=1, column=6, padx=12, pady=6, sticky="w")
+        ttk.Entry(form_card, textvariable=self.var_heure_fin, width=10, style="App.TEntry").grid(row=1, column=7, padx=6, pady=6, sticky="w")
 
         self.btn_ajouter = ttk.Button(form_card, text=action_add, command=self.ajouter_entree, style="Primary.TButton")
         self.btn_ajouter.grid(row=1, column=8, padx=(10, 14), pady=6, sticky="e")
@@ -308,7 +300,7 @@ class ApplicationTk(tk.Tk):
 
         self.tree_entrees = ttk.Treeview(
             table_card,
-            columns=("id", "materiel", "puissance_w", "tranche", "duree_h"),
+            columns=("id", "materiel", "puissance_w", "heure_debut", "heure_fin"),
             show="headings",
             height=16,
             style="App.Treeview",
@@ -318,8 +310,8 @@ class ApplicationTk(tk.Tk):
             ("id", 70),
             ("materiel", 350),
             ("puissance_w", 150),
-            ("tranche", 130),
-            ("duree_h", 130),
+            ("heure_debut", 130),
+            ("heure_fin", 130),
         ]:
             self.tree_entrees.heading(col, text=col)
             self.tree_entrees.column(col, width=width, anchor="w")
@@ -557,10 +549,7 @@ class ApplicationTk(tk.Tk):
     def _charger_tranches(self):
         tranches = self.repository.lister_tranches()
         if tranches:
-            self.map_tranches = {libelle: tranche_id for tranche_id, libelle in tranches}
             self.tranches_disponibles = [libelle for _id, libelle in tranches]
-            self.cmb_tranches["values"] = self.tranches_disponibles
-            self.var_tranche.set(self.tranches_disponibles[0])
 
     def rafraichir_simulations(self):
         self.map_simulations.clear()
@@ -621,8 +610,8 @@ class ApplicationTk(tk.Tk):
                     entree.id,
                     entree.materiel,
                     f"{entree.puissance_w:.2f}",
-                    entree.tranche,
-                    f"{entree.duree_h:.2f}",
+                    entree.heure_debut,
+                    entree.heure_fin,
                 ),
             )
 
@@ -634,8 +623,8 @@ class ApplicationTk(tk.Tk):
         self.entree_en_edition_id = int(values[0])
         self.var_materiel.set(values[1])
         self.var_puissance.set(values[2])
-        self.var_tranche.set(values[3])
-        self.var_duree.set(values[4])
+        self.var_heure_debut.set(values[3])
+        self.var_heure_fin.set(values[4])
         maj_text = "Actualiser" if self.personalized_layout else "Mettre a jour"
         self.btn_ajouter.config(text=maj_text)
 
@@ -643,8 +632,8 @@ class ApplicationTk(tk.Tk):
         self.entree_en_edition_id = None
         self.var_materiel.set("")
         self.var_puissance.set("")
-        self.var_tranche.set("MATIN")
-        self.var_duree.set("")
+        self.var_heure_debut.set("")
+        self.var_heure_fin.set("")
         reset_text = "Injecter" if self.personalized_layout else "Ajouter"
         self.btn_ajouter.config(text=reset_text)
         selection = self.tree_entrees.selection()
@@ -658,23 +647,26 @@ class ApplicationTk(tk.Tk):
 
             materiel = self.var_materiel.get().strip()
             puissance_w = float(self.var_puissance.get())
-            tranche = self.var_tranche.get().strip().upper()
-            duree_h = float(self.var_duree.get())
+            heure_debut = self.var_heure_debut.get().strip()
+            heure_fin = self.var_heure_fin.get().strip()
 
             if not materiel:
                 raise ValueError("Materiel obligatoire")
-            if tranche not in self.map_tranches:
-                raise ValueError("Tranche invalide")
-            if puissance_w <= 0 or duree_h <= 0:
-                raise ValueError("Puissance et duree doivent etre > 0")
+            if puissance_w <= 0:
+                raise ValueError("Puissance doit etre > 0")
+
+            self._validate_hhmm(heure_debut)
+            self._validate_hhmm(heure_fin)
+            if heure_debut == heure_fin:
+                raise ValueError("Heure debut et heure fin ne peuvent pas etre identiques")
 
             if self.entree_en_edition_id:
                 self.repository.modifier_entree(
                     entree_id=self.entree_en_edition_id,
                     materiel=materiel,
                     puissance_w=puissance_w,
-                    id_tranche_heure=self.map_tranches[tranche],
-                    duree_h=duree_h,
+                    heure_debut=heure_debut,
+                    heure_fin=heure_fin,
                 )
                 self.annuler_edition()
             else:
@@ -682,12 +674,13 @@ class ApplicationTk(tk.Tk):
                     simulation_id=self.simulation_active_id,
                     materiel=materiel,
                     puissance_w=puissance_w,
-                    id_tranche_heure=self.map_tranches[tranche],
-                    duree_h=duree_h,
+                    heure_debut=heure_debut,
+                    heure_fin=heure_fin,
                 )
                 self.var_materiel.set("")
                 self.var_puissance.set("")
-                self.var_duree.set("")
+                self.var_heure_debut.set("")
+                self.var_heure_fin.set("")
 
             self.rafraichir_entrees()
         except Exception as exc:
@@ -715,6 +708,12 @@ class ApplicationTk(tk.Tk):
         if key in self.result_labels:
             self.result_labels[key].config(text=f"{value:.{decimals}f}")
 
+    def _validate_hhmm(self, text: str):
+        try:
+            datetime.strptime(text, "%H:%M")
+        except ValueError as exc:
+            raise ValueError("Heure invalide. Utiliser le format HH:MM") from exc
+
     def _reset_result_values(self):
         for key, label in self.result_labels.items():
             label.config(text="0.000" if key.endswith("kw") or key.endswith("kwh") else "0.00")
@@ -726,7 +725,8 @@ class ApplicationTk(tk.Tk):
 
             entrees = self.repository.lister_entrees(self.simulation_active_id)
             parametres = self.repository.charger_parametres()
-            resultat = self.service.calculer(entrees, parametres)
+            tranches = self.repository.lister_tranches_detail()
+            resultat = self.service.calculer(entrees, parametres, tranches)
 
             self._set_result_value("energie_matin_wh", resultat.energie_matin_wh)
             self._set_result_value("energie_soir_wh", resultat.energie_soir_wh)

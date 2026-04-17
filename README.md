@@ -2,7 +2,7 @@
 
 Application desktop Python pour:
 - creer une simulation,
-- ajouter les entrees (materiel, puissance, tranche, duree),
+- ajouter les entrees (materiel, puissance, heure debut, heure fin),
 - afficher le resultat de dimensionnement.
 
 Le resultat n'est pas stocke en base. Seules les entrees sont stockees.
@@ -91,9 +91,12 @@ La connexion DB se fait en interne avec ces variables d'environnement (optionnel
 3. Ajouter des entrees:
    - materiel,
    - puissance (W),
-   - tranche (`MATIN` / `SOIR` / `NUIT`),
-   - duree (h).
+  - heure debut (HH:MM),
+  - heure fin (HH:MM).
 4. Cliquer sur `Calculer` pour voir le resultat.
+
+La tranche (MATIN/SOIR/NUIT) et la duree par tranche sont deduites automatiquement
+par le traitement a partir des heures de debut et fin.
 
 ---
 

@@ -14,9 +14,16 @@ class EntreeSimulation:
     simulation_id: int
     materiel: str
     puissance_w: float
-    id_tranche_heure: int
-    tranche: str
-    duree_h: float
+    heure_debut: str
+    heure_fin: str
+
+
+@dataclass(frozen=True)
+class TrancheHoraire:
+    id: int
+    libelle: str
+    heure_debut: str
+    heure_fin: str
 
 
 @dataclass(frozen=True)

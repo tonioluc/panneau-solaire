@@ -48,26 +48,20 @@ CREATE TABLE dbo.simulation_entree (
     simulation_id BIGINT NOT NULL,
     materiel NVARCHAR(200) NOT NULL,
     puissance_w DECIMAL(10,2) NOT NULL,
-    id_tranche_heure BIGINT NOT NULL,
-    duree_h DECIMAL(10,2) NOT NULL,
+    heure_debut TIME NOT NULL,
+    heure_fin TIME NOT NULL,
     cree_le DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
     CONSTRAINT fk_simulation_entree_simulation
         FOREIGN KEY (simulation_id) REFERENCES dbo.simulation(id) ON DELETE CASCADE,
-    CONSTRAINT fk_simulation_entree_tranche
-        FOREIGN KEY (id_tranche_heure) REFERENCES dbo.tranche_heure(id),
     CONSTRAINT ck_simulation_entree_puissance
         CHECK (puissance_w > 0),
-    CONSTRAINT ck_simulation_entree_duree
-        CHECK (duree_h > 0)
+    CONSTRAINT ck_simulation_entree_heure_diff
+        CHECK (heure_debut <> heure_fin)
 );
 GO
 
 CREATE INDEX idx_simulation_entree_simulation_id
     ON dbo.simulation_entree(simulation_id);
-GO
-
-CREATE INDEX idx_simulation_entree_id_tranche_heure
-    ON dbo.simulation_entree(id_tranche_heure);
 GO
 
 CREATE INDEX idx_parametre_code

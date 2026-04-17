@@ -1,8 +1,9 @@
 import os
+from datetime import time
 
 import pyodbc
 
-from modeles import EntreeSimulation, Simulation
+from modeles import EntreeSimulation, Simulation, TrancheHoraire
 
 
 class RepositorySqlServer:
@@ -67,6 +68,26 @@ class RepositorySqlServer:
         cur = self._executer("SELECT id, libelle FROM dbo.tranche_heure ORDER BY id")
         return [(int(r[0]), str(r[1])) for r in cur.fetchall()]
 
+    def lister_tranches_detail(self) -> list[TrancheHoraire]:
+        cur = self._executer(
+            "SELECT id, libelle, heure_debut, heure_fin FROM dbo.tranche_heure ORDER BY id"
+        )
+        return [
+            TrancheHoraire(
+                id=int(r[0]),
+                libelle=str(r[1]),
+                heure_debut=self._format_time(r[2]),
+                heure_fin=self._format_time(r[3]),
+            )
+            for r in cur.fetchall()
+        ]
+
+    def _format_time(self, value) -> str:
+        if isinstance(value, time):
+            return value.strftime("%H:%M")
+        text = str(value)
+        return text[:5] if len(text) >= 5 else text
+
     def charger_parametres(self) -> dict[str, float]:
         cur = self._executer("SELECT code, valeur FROM dbo.parametre")
         base = {
@@ -102,9 +123,8 @@ class RepositorySqlServer:
     def lister_entrees(self, simulation_id: int) -> list[EntreeSimulation]:
         cur = self._executer(
             """
-            SELECT se.id, se.simulation_id, se.materiel, se.puissance_w, se.id_tranche_heure, th.libelle, se.duree_h
+            SELECT se.id, se.simulation_id, se.materiel, se.puissance_w, se.heure_debut, se.heure_fin
             FROM dbo.simulation_entree se
-            INNER JOIN dbo.tranche_heure th ON th.id = se.id_tranche_heure
             WHERE se.simulation_id = ?
             ORDER BY se.id
             """,
@@ -116,9 +136,8 @@ class RepositorySqlServer:
                 simulation_id=int(r[1]),
                 materiel=str(r[2]),
                 puissance_w=float(r[3]),
-                id_tranche_heure=int(r[4]),
-                tranche=str(r[5]),
-                duree_h=float(r[6]),
+                heure_debut=self._format_time(r[4]),
+                heure_fin=self._format_time(r[5]),
             )
             for r in cur.fetchall()
         ]
@@ -128,16 +147,16 @@ class RepositorySqlServer:
         simulation_id: int,
         materiel: str,
         puissance_w: float,
-        id_tranche_heure: int,
-        duree_h: float,
+        heure_debut: str,
+        heure_fin: str,
     ):
         self._executer(
             """
             INSERT INTO dbo.simulation_entree
-            (simulation_id, materiel, puissance_w, id_tranche_heure, duree_h)
+            (simulation_id, materiel, puissance_w, heure_debut, heure_fin)
             VALUES (?, ?, ?, ?, ?)
             """,
-            [simulation_id, materiel, puissance_w, id_tranche_heure, duree_h],
+            [simulation_id, materiel, puissance_w, heure_debut, heure_fin],
         )
         self.cnxn.commit()
 
@@ -146,16 +165,16 @@ class RepositorySqlServer:
         entree_id: int,
         materiel: str,
         puissance_w: float,
-        id_tranche_heure: int,
-        duree_h: float,
+        heure_debut: str,
+        heure_fin: str,
     ):
         self._executer(
             """
             UPDATE dbo.simulation_entree
-            SET materiel = ?, puissance_w = ?, id_tranche_heure = ?, duree_h = ?
+            SET materiel = ?, puissance_w = ?, heure_debut = ?, heure_fin = ?
             WHERE id = ?
             """,
-            [materiel, puissance_w, id_tranche_heure, duree_h, entree_id],
+            [materiel, puissance_w, heure_debut, heure_fin, entree_id],
         )
         self.cnxn.commit()
 
