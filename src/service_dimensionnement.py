@@ -116,6 +116,7 @@ class ServiceDimensionnement:
 
         panneau_pratique_achat_w = panneau_theorique_w / facteur_panneau_pratique
         batterie_pratique_achat_wh = batterie_theorique_wh * facteur_marge_batterie
+        convertisseur_propose_w = max(puissance["MATIN"], puissance["SOIR"]) * 2
         panneau_proposition_40_w = panneau_theorique_w / ratio_couverture_40
         panneau_proposition_30_w = panneau_theorique_w / ratio_couverture_30
 
@@ -133,6 +134,7 @@ class ServiceDimensionnement:
             panneau_theorique_w=panneau_theorique_w,
             panneau_pratique_achat_w=panneau_pratique_achat_w,
             batterie_pratique_achat_wh=batterie_pratique_achat_wh,
+            convertisseur_propose_w=convertisseur_propose_w,
             panneau_proposition_40_w=panneau_proposition_40_w,
             panneau_proposition_30_w=panneau_proposition_30_w,
         )

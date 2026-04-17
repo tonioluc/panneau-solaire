@@ -376,6 +376,7 @@ class ApplicationTk(tk.Tk):
         practical_values.pack(fill="x", padx=20, pady=(0, 18))
 
         self._hero_metric(practical_values, "BATTERIE A ACHETER", "batterie_pratique_kwh", "kWh", 0)
+        self._hero_metric(practical_values, "CONVERTISSEUR PROPOSE", "convertisseur_propose_kw", "kW", 1)
 
         alternatives = tk.Frame(practical_bg, bg=self.theme.get("primary"))
         alternatives.pack(fill="x", padx=20, pady=(0, 18))
@@ -742,6 +743,7 @@ class ApplicationTk(tk.Tk):
 
             self._set_result_value("panneau_pratique_kw", resultat.panneau_pratique_achat_w / 1000.0, 3)
             self._set_result_value("batterie_pratique_kwh", resultat.batterie_pratique_achat_wh / 1000.0, 3)
+            self._set_result_value("convertisseur_propose_kw", resultat.convertisseur_propose_w / 1000.0, 3)
             self._set_result_value("panneau_40pct_kw", resultat.panneau_proposition_40_w / 1000.0, 3)
             self._set_result_value("panneau_30pct_kw", resultat.panneau_proposition_30_w / 1000.0, 3)
         except Exception as exc:

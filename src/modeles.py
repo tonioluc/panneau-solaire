@@ -41,5 +41,6 @@ class ResultatSimulation:
     panneau_theorique_w: float
     panneau_pratique_achat_w: float
     batterie_pratique_achat_wh: float
+    convertisseur_propose_w: float
     panneau_proposition_40_w: float
     panneau_proposition_30_w: float
