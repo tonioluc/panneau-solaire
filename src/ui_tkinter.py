@@ -227,7 +227,7 @@ class ApplicationTk(tk.Tk):
 
         tk.Label(
             hero,
-            text="3276",
+            text="",
             bg=self.theme.get("primary"),
             fg=self.theme.get("on_primary"),
             font=(self.theme.get("font_display"), 24, "bold"),
