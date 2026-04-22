@@ -3,7 +3,7 @@ from datetime import time
 
 import pyodbc
 
-from modeles import EntreeSimulation, Simulation, TrancheHoraire, TypePanneau
+from modeles import EntreeSimulation, PrixEnergieNonUtilisee, Simulation, TrancheHoraire, TypePanneau
 
 
 class RepositorySqlServer:
@@ -101,6 +101,61 @@ class RepositorySqlServer:
         for code, valeur in cur.fetchall():
             base[str(code)] = float(valeur)
         return base
+
+    def charger_prix_energie_non_utilisee(self) -> dict[str, float]:
+        cur = self._executer("SELECT code_jour, prix_wh FROM dbo.prix_energie_non_utilisee")
+        base = {
+            "OUVRABLE": 0.0,
+            "WEEKEND": 0.0,
+        }
+        for code_jour, prix_wh in cur.fetchall():
+            base[str(code_jour).upper().strip()] = float(prix_wh)
+        return base
+
+    def lister_prix_energie_non_utilisee(self) -> list[PrixEnergieNonUtilisee]:
+        cur = self._executer(
+            """
+            SELECT id, code_jour, prix_wh
+            FROM dbo.prix_energie_non_utilisee
+            ORDER BY code_jour
+            """
+        )
+        return [
+            PrixEnergieNonUtilisee(
+                id=int(r[0]),
+                code_jour=str(r[1]),
+                prix_wh=float(r[2]),
+            )
+            for r in cur.fetchall()
+        ]
+
+    def creer_prix_energie_non_utilisee(self, code_jour: str, prix_wh: float) -> int:
+        cur = self._executer(
+            """
+            INSERT INTO dbo.prix_energie_non_utilisee (code_jour, prix_wh)
+            OUTPUT INSERTED.id
+            VALUES (?, ?)
+            """,
+            [code_jour.upper().strip(), prix_wh],
+        )
+        prix_id = int(cur.fetchone()[0])
+        self.cnxn.commit()
+        return prix_id
+
+    def modifier_prix_energie_non_utilisee(self, prix_id: int, code_jour: str, prix_wh: float):
+        self._executer(
+            """
+            UPDATE dbo.prix_energie_non_utilisee
+            SET code_jour = ?, prix_wh = ?
+            WHERE id = ?
+            """,
+            [code_jour.upper().strip(), prix_wh, prix_id],
+        )
+        self.cnxn.commit()
+
+    def supprimer_prix_energie_non_utilisee(self, prix_id: int):
+        self._executer("DELETE FROM dbo.prix_energie_non_utilisee WHERE id = ?", [prix_id])
+        self.cnxn.commit()
 
     def creer_simulation(self, titre: str, notes: str | None) -> int:
         cur = self._executer(

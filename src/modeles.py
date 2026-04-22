@@ -36,6 +36,13 @@ class TypePanneau:
 
 
 @dataclass(frozen=True)
+class PrixEnergieNonUtilisee:
+    id: int
+    code_jour: str
+    prix_wh: float
+
+
+@dataclass(frozen=True)
 class PropositionPanneau:
     id_type_panneau: int
     libelle_type: str
@@ -63,4 +70,11 @@ class ResultatSimulation:
     panneau_pratique_achat_w: float
     batterie_pratique_achat_wh: float
     convertisseur_propose_w: float
+    energie_non_utilisee_matin_wh: float
+    energie_non_utilisee_soir_wh: float
+    energie_non_utilisee_totale_wh: float
+    prix_unitaire_ouvrable_ar_wh: float
+    prix_unitaire_weekend_ar_wh: float
+    prix_total_ouvrable_ar: float
+    prix_total_weekend_ar: float
     propositions_panneau: list['PropositionPanneau']

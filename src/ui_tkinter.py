@@ -31,6 +31,9 @@ class ApplicationTk(tk.Tk):
         self.type_panneau_en_edition_id: int | None = None
         self.types_panneau_actuels: list = []
 
+        self.prix_energie_en_edition_id: int | None = None
+        self.prix_energie_actuels: list = []
+
         self._build_ui()
         self._connect_db()
 
@@ -209,14 +212,17 @@ class ApplicationTk(tk.Tk):
         self.tab_entrees = ttk.Frame(tabs, style="App.TFrame")
         self.tab_resultat = ttk.Frame(tabs, style="App.TFrame")
         self.tab_types_panneau = ttk.Frame(tabs, style="App.TFrame")
+        self.tab_prix_energie = ttk.Frame(tabs, style="App.TFrame")
 
         tabs.add(self.tab_entrees, text="Entrees")
         tabs.add(self.tab_resultat, text="Resultats")
         tabs.add(self.tab_types_panneau, text="Types Panneau")
+        tabs.add(self.tab_prix_energie, text="Prix Energie")
 
         self._build_tab_entrees()
         self._build_tab_resultat()
         self._build_tab_types_panneau()
+        self._build_tab_prix_energie()
 
     def _build_ui_personalized(self):
         shell = ttk.Frame(self, style="App.TFrame")
@@ -227,7 +233,7 @@ class ApplicationTk(tk.Tk):
 
         tk.Label(
             hero,
-            text="",
+            text= "Projet panneau solaire",
             bg=self.theme.get("primary"),
             fg=self.theme.get("on_primary"),
             font=(self.theme.get("font_display"), 24, "bold"),
@@ -241,14 +247,14 @@ class ApplicationTk(tk.Tk):
             font=(self.theme.get("font_body"), 11),
         ).pack(anchor="w", padx=18, pady=(0, 12))
 
-        body = ttk.Frame(shell, style="App.TFrame")
+        body = ttk.PanedWindow(shell, orient="horizontal")
         body.pack(fill="both", expand=True, padx=18, pady=(0, 16))
 
         left = ttk.Frame(body, style="Card.TFrame")
-        left.pack(side="left", fill="both", expand=True, padx=(0, 8))
+        body.add(left, weight=1)
 
         right = ttk.Frame(body, style="WhiteCard.TFrame")
-        right.pack(side="left", fill="both", expand=True, padx=(8, 0))
+        body.add(right, weight=1)
 
         controls = ttk.Frame(left, style="Card.TFrame")
         controls.pack(fill="x", padx=10, pady=10)
@@ -259,15 +265,18 @@ class ApplicationTk(tk.Tk):
 
         self.tab_entrees = ttk.Frame(left_tabs, style="Card.TFrame")
         self.tab_types_panneau = ttk.Frame(left_tabs, style="App.TFrame")
+        self.tab_prix_energie = ttk.Frame(left_tabs, style="App.TFrame")
 
         left_tabs.add(self.tab_entrees, text="Entrees")
         left_tabs.add(self.tab_types_panneau, text="Types Panneau")
+        left_tabs.add(self.tab_prix_energie, text="Prix Energie")
 
         self.tab_resultat = ttk.Frame(right, style="WhiteCard.TFrame")
         self.tab_resultat.pack(fill="both", expand=True, padx=10, pady=10)
 
         self._build_tab_entrees()
         self._build_tab_types_panneau()
+        self._build_tab_prix_energie()
         self._build_tab_resultat()
 
     def _build_tab_entrees(self):
@@ -334,46 +343,16 @@ class ApplicationTk(tk.Tk):
 
     def _build_tab_resultat(self):
         calculer_text = "Propulser calcul" if self.personalized_layout else "Calculer"
-        consommation_title = "Flux energie par tranche" if self.personalized_layout else "Consommation par tranche"
-        puissance_title = "Charge instantanee" if self.personalized_layout else "Puissance par tranche"
-        theorique_title = "Modele theorique" if self.personalized_layout else "Theorique"
-        pratique_title = "Projection d'achat" if self.personalized_layout else "Recommandations Pratiques"
+        pratique_title = "Resultats principaux"
+        details_title = "Details techniques"
 
         top = ttk.Frame(self.tab_resultat, style="App.TFrame")
         top.pack(fill="x", pady=(12, 10))
 
         ttk.Button(top, text=calculer_text, command=self.calculer, style="Primary.TButton").pack(side="right")
 
-        grid = ttk.Frame(self.tab_resultat, style="App.TFrame")
-        grid.pack(fill="both", expand=True)
-
-        left_card = self._metric_card(grid, consommation_title)
-        left_card.grid(row=0, column=0, sticky="nsew", padx=(0, 10), pady=(0, 10))
-
-        right_card = self._metric_card(grid, puissance_title)
-        right_card.grid(row=0, column=1, sticky="nsew", padx=(10, 0), pady=(0, 10))
-
-        self._pair_row(left_card, "Matin", "energie_matin_wh", "Wh", 1)
-        self._pair_row(left_card, "Soir", "energie_soir_wh", "Wh", 2)
-        self._pair_row(left_card, "Nuit", "energie_nuit_wh", "Wh", 3)
-
-        self._pair_row(right_card, "Matin", "puissance_matin_w", "W", 1)
-        self._pair_row(right_card, "Soir", "puissance_soir_w", "W", 2)
-        self._pair_row(right_card, "Nuit", "puissance_nuit_w", "W", 3)
-
-        theo_card = ttk.Frame(grid, style="Card.TFrame")
-        theo_card.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(0, 10))
-        ttk.Label(theo_card, text=theorique_title, style="Section.TLabel").pack(anchor="w", padx=14, pady=(12, 8))
-
-        theo_metrics = ttk.Frame(theo_card, style="Card.TFrame")
-        theo_metrics.pack(fill="x", padx=12, pady=(0, 12))
-
-        self._mini_card(theo_metrics, "Batterie", "batterie_theorique_wh", "Wh", 0)
-        self._mini_card(theo_metrics, "Charge batterie", "puissance_charge_batterie_w", "W", 1)
-        self._mini_card(theo_metrics, "Panneau final", "panneau_theorique_w", "W", 2)
-
-        practical_bg = tk.Frame(grid, bg=self.theme.get("primary"))
-        practical_bg.grid(row=2, column=0, columnspan=2, sticky="nsew")
+        practical_bg = tk.Frame(self.tab_resultat, bg=self.theme.get("primary"))
+        practical_bg.pack(fill="x", pady=(0, 10))
 
         title = tk.Label(
             practical_bg,
@@ -386,18 +365,51 @@ class ApplicationTk(tk.Tk):
         title.pack(fill="x", padx=20, pady=(16, 12))
 
         practical_values = tk.Frame(practical_bg, bg=self.theme.get("primary"))
-        practical_values.pack(fill="x", padx=20, pady=(0, 18))
+        practical_values.pack(fill="x", padx=20, pady=(0, 10))
 
-        self._hero_metric(practical_values, "BATTERIE A ACHETER", "batterie_pratique_kwh", "kWh", 0)
-        self._hero_metric(practical_values, "CONVERTISSEUR PROPOSE", "convertisseur_propose_kw", "kW", 1)
+        self._hero_metric(practical_values, "BATTERIE A ACHETER", "batterie_pratique_kwh", "kWh", 0, 0)
+        self._hero_metric(practical_values, "CONVERTISSEUR PROPOSE", "convertisseur_propose_kw", "kW", 1, 0)
+        self._hero_metric(practical_values, "ENERGIE NON UTILISEE", "energie_non_utilisee_kwh", "kWh", 2, 0)
+
+        self._hero_metric(practical_values, "VALEUR JOUR OUVRABLE", "prix_total_ouvrable_ar", "Ar", 0, 1)
+        self._hero_metric(practical_values, "VALEUR WEEK-END", "prix_total_weekend_ar", "Ar", 1, 1)
+        self._hero_metric(practical_values, "MEILLEUR PRIX PANNEAU", "meilleur_panneau_prix_ar", "Ar", 2, 1)
+
+        for col in range(3):
+            practical_values.columnconfigure(col, weight=1)
+
+        tk.Label(
+            practical_bg,
+            text="PANNEAUX ET PRIX PROPOSES",
+            bg=self.theme.get("primary"),
+            fg="#caefe0",
+            font=(self.theme.get("font_body"), 10, "bold"),
+            anchor="w",
+        ).pack(fill="x", padx=20, pady=(6, 8))
 
         # Container pour les propositions panneaux dynamiques
         self.propositions_container = tk.Frame(practical_bg, bg=self.theme.get("primary"))
         self.propositions_container.pack(fill="x", padx=20, pady=(0, 18))
 
-        grid.columnconfigure(0, weight=1)
-        grid.columnconfigure(1, weight=1)
-        grid.rowconfigure(3, weight=1)
+        details_card = ttk.Frame(self.tab_resultat, style="Card.TFrame")
+        details_card.pack(fill="both", expand=True)
+
+        ttk.Label(details_card, text=details_title, style="Section.TLabel").pack(anchor="w", padx=14, pady=(12, 8))
+
+        details_grid = tk.Frame(details_card, bg=self.theme.get("surface_container_low"))
+        details_grid.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+
+        self._detail_chip(details_grid, "Energie matin", "energie_matin_wh", "Wh", 0, 0)
+        self._detail_chip(details_grid, "Energie soir", "energie_soir_wh", "Wh", 0, 1)
+        self._detail_chip(details_grid, "Energie nuit", "energie_nuit_wh", "Wh", 0, 2)
+
+        self._detail_chip(details_grid, "Puissance matin", "puissance_matin_w", "W", 1, 0)
+        self._detail_chip(details_grid, "Puissance soir", "puissance_soir_w", "W", 1, 1)
+        self._detail_chip(details_grid, "Puissance nuit", "puissance_nuit_w", "W", 1, 2)
+
+        self._detail_chip(details_grid, "Batterie theorique", "batterie_theorique_wh", "Wh", 2, 0)
+        self._detail_chip(details_grid, "Charge batterie", "puissance_charge_batterie_w", "W", 2, 1)
+        self._detail_chip(details_grid, "Panneau final", "panneau_theorique_w", "W", 2, 2)
 
     def _build_tab_types_panneau(self):
         """Onglet de gestion des types de panneaux (CRUD)"""
@@ -460,6 +472,69 @@ class ApplicationTk(tk.Tk):
         self.tree_types_panneau.pack(fill="both", expand=True, padx=12, pady=12)
         self.tree_types_panneau.bind("<Double-1>", self.charger_type_pour_edition)
 
+    def _build_tab_prix_energie(self):
+        """Onglet de gestion des prix de vente de l'energie non utilisee (CRUD)"""
+        form_card = ttk.Frame(self.tab_prix_energie, style="Card.TFrame")
+        form_card.pack(fill="x", pady=(12, 10))
+
+        ttk.Label(form_card, text="Configuration prix energie non utilisee", style="Section.TLabel").grid(
+            row=0, column=0, columnspan=6, sticky="w", padx=14, pady=(12, 8)
+        )
+
+        self.var_prix_code_jour = tk.StringVar(value="OUVRABLE")
+        self.var_prix_wh = tk.StringVar()
+
+        ttk.Label(form_card, text="Type de jour", style="Muted.TLabel").grid(row=1, column=0, padx=12, pady=6, sticky="w")
+        self.cmb_prix_code_jour = ttk.Combobox(
+            form_card,
+            textvariable=self.var_prix_code_jour,
+            values=("OUVRABLE", "WEEKEND"),
+            width=16,
+            state="readonly",
+            style="App.TCombobox",
+        )
+        self.cmb_prix_code_jour.grid(row=1, column=1, padx=6, pady=6, sticky="w")
+
+        ttk.Label(form_card, text="Prix (Ar/Wh)", style="Muted.TLabel").grid(row=1, column=2, padx=12, pady=6, sticky="w")
+        ttk.Entry(form_card, textvariable=self.var_prix_wh, width=14, style="App.TEntry").grid(row=1, column=3, padx=6, pady=6, sticky="w")
+
+        self.btn_ajouter_prix = ttk.Button(
+            form_card,
+            text="Ajouter",
+            command=self.ajouter_prix_energie,
+            style="Primary.TButton",
+        )
+        self.btn_ajouter_prix.grid(row=1, column=4, padx=(10, 14), pady=6, sticky="e")
+
+        actions = ttk.Frame(self.tab_prix_energie, style="App.TFrame")
+        actions.pack(fill="x", pady=(0, 8))
+
+        ttk.Button(actions, text="Modifier prix", command=self.modifier_prix_energie, style="Ghost.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(actions, text="Annuler edition", command=self.annuler_edition_prix, style="Ghost.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(actions, text="Supprimer prix", command=self.supprimer_prix_energie, style="Ghost.TButton").pack(side="left")
+
+        table_card = ttk.Frame(self.tab_prix_energie, style="WhiteCard.TFrame")
+        table_card.pack(fill="both", expand=True)
+
+        self.tree_prix_energie = ttk.Treeview(
+            table_card,
+            columns=("id", "code_jour", "prix_wh"),
+            show="headings",
+            height=16,
+            style="App.Treeview",
+        )
+
+        for col, width in [
+            ("id", 90),
+            ("code_jour", 200),
+            ("prix_wh", 180),
+        ]:
+            self.tree_prix_energie.heading(col, text=col)
+            self.tree_prix_energie.column(col, width=width, anchor="w")
+
+        self.tree_prix_energie.pack(fill="both", expand=True, padx=12, pady=12)
+        self.tree_prix_energie.bind("<Double-1>", self.charger_prix_pour_edition)
+
     def _metric_card(self, parent: ttk.Frame, title: str) -> ttk.Frame:
         frame = ttk.Frame(parent, style="Card.TFrame")
         ttk.Label(frame, text=title, style="Section.TLabel").grid(row=0, column=0, columnspan=3, sticky="w", padx=14, pady=(12, 8))
@@ -516,9 +591,51 @@ class ApplicationTk(tk.Tk):
         self.result_labels[key] = val
         parent.columnconfigure(col, weight=1)
 
-    def _hero_metric(self, parent: tk.Frame, title: str, key: str, unit: str, col: int):
+    def _detail_chip(self, parent: tk.Frame, title: str, key: str, unit: str, row: int, col: int):
+        card = tk.Frame(parent, bg=self.theme.get("surface_container_lowest"))
+        card.grid(row=row, column=col, sticky="nsew", padx=6, pady=6)
+
+        tk.Label(
+            card,
+            text=title,
+            bg=self.theme.get("surface_container_lowest"),
+            fg=self.theme.get("on_surface_muted"),
+            font=(self.theme.get("font_body"), 9),
+            anchor="w",
+        ).pack(fill="x", padx=10, pady=(8, 2))
+
+        value_line = tk.Frame(card, bg=self.theme.get("surface_container_lowest"))
+        value_line.pack(fill="x", padx=10, pady=(0, 8))
+
+        val = tk.Label(
+            value_line,
+            text="0.00",
+            bg=self.theme.get("surface_container_lowest"),
+            fg=self.theme.get("on_surface"),
+            font=(self.theme.get("font_body"), 12, "bold"),
+        )
+        val.pack(side="left")
+
+        tk.Label(
+            value_line,
+            text=unit,
+            bg=self.theme.get("surface_container_lowest"),
+            fg=self.theme.get("on_surface_muted"),
+            font=(self.theme.get("font_body"), 9),
+        ).pack(side="left", padx=(4, 0), pady=(3, 0))
+
+        self.result_labels[key] = val
+        parent.columnconfigure(col, weight=1)
+
+    def _hero_metric(self, parent: tk.Frame, title: str, key: str, unit: str, col: int, row: int = 0):
         section = tk.Frame(parent, bg=self.theme.get("primary"))
-        section.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 16, 0))
+        section.grid(
+            row=row,
+            column=col,
+            sticky="nsew",
+            padx=(0 if col == 0 else 16, 0),
+            pady=(0, 12 if row == 0 else 0),
+        )
 
         tk.Label(
             section,
@@ -601,6 +718,7 @@ class ApplicationTk(tk.Tk):
             self._charger_tranches()
             self.rafraichir_simulations()
             self.rafraichir_types_panneau()
+            self.rafraichir_prix_energie()
         except Exception as exc:
             messagebox.showerror(
                 "Base de donnees",
@@ -789,7 +907,14 @@ class ApplicationTk(tk.Tk):
             parametres = self.repository.charger_parametres()
             tranches = self.repository.lister_tranches_detail()
             types_panneau = self.repository.lister_types_panneau()
-            resultat = self.service.calculer(entrees, parametres, tranches, types_panneau)
+            prix_energie_non_utilisee = self.repository.charger_prix_energie_non_utilisee()
+            resultat = self.service.calculer(
+                entrees,
+                parametres,
+                tranches,
+                types_panneau,
+                prix_energie_non_utilisee,
+            )
 
             self._set_result_value("energie_matin_wh", resultat.energie_matin_wh)
             self._set_result_value("energie_soir_wh", resultat.energie_soir_wh)
@@ -806,6 +931,24 @@ class ApplicationTk(tk.Tk):
             self._set_result_value("panneau_pratique_kw", resultat.panneau_pratique_achat_w / 1000.0, 3)
             self._set_result_value("batterie_pratique_kwh", resultat.batterie_pratique_achat_wh / 1000.0, 3)
             self._set_result_value("convertisseur_propose_kw", resultat.convertisseur_propose_w / 1000.0, 3)
+            self._set_result_value("energie_non_utilisee_kwh", resultat.energie_non_utilisee_totale_wh / 1000.0, 3)
+
+            self._set_result_value("energie_non_utilisee_matin_wh", resultat.energie_non_utilisee_matin_wh)
+            self._set_result_value("energie_non_utilisee_soir_wh", resultat.energie_non_utilisee_soir_wh)
+            self._set_result_value("energie_non_utilisee_totale_wh", resultat.energie_non_utilisee_totale_wh)
+            self._set_result_value("prix_unitaire_ouvrable_ar_wh", resultat.prix_unitaire_ouvrable_ar_wh, 4)
+            self._set_result_value("prix_unitaire_weekend_ar_wh", resultat.prix_unitaire_weekend_ar_wh, 4)
+            self._set_result_value("prix_total_ouvrable_ar", resultat.prix_total_ouvrable_ar)
+            self._set_result_value("prix_total_weekend_ar", resultat.prix_total_weekend_ar)
+
+            meilleur_prix_panneau_ar = 0.0
+            if resultat.propositions_panneau:
+                meilleur = next(
+                    (p for p in resultat.propositions_panneau if p.est_recommande),
+                    min(resultat.propositions_panneau, key=lambda p: p.prix_total),
+                )
+                meilleur_prix_panneau_ar = meilleur.prix_total
+            self._set_result_value("meilleur_panneau_prix_ar", meilleur_prix_panneau_ar)
 
             self._afficher_propositions_panneaux(resultat.propositions_panneau)
         except Exception as exc:
@@ -901,6 +1044,90 @@ class ApplicationTk(tk.Tk):
         except Exception as exc:
             messagebox.showerror("Types Panneau", str(exc))
 
+    def ajouter_prix_energie(self):
+        try:
+            code_jour = self.var_prix_code_jour.get().strip().upper()
+            prix_wh = float(self.var_prix_wh.get())
+
+            if code_jour not in {"OUVRABLE", "WEEKEND"}:
+                raise ValueError("Type de jour invalide (OUVRABLE ou WEEKEND)")
+            if prix_wh < 0:
+                raise ValueError("Prix doit etre >= 0")
+
+            if self.prix_energie_en_edition_id is None:
+                self.repository.creer_prix_energie_non_utilisee(code_jour, prix_wh)
+            else:
+                self.repository.modifier_prix_energie_non_utilisee(
+                    self.prix_energie_en_edition_id,
+                    code_jour,
+                    prix_wh,
+                )
+                self.prix_energie_en_edition_id = None
+
+            self.var_prix_code_jour.set("OUVRABLE")
+            self.var_prix_wh.set("")
+            self.btn_ajouter_prix.config(text="Ajouter")
+            self.rafraichir_prix_energie()
+        except Exception as exc:
+            messagebox.showerror("Prix Energie", str(exc))
+
+    def modifier_prix_energie(self):
+        if self.prix_energie_en_edition_id:
+            self.ajouter_prix_energie()
+        else:
+            messagebox.showinfo("Modification", "Double-cliquez sur un prix pour l'editer")
+
+    def supprimer_prix_energie(self):
+        try:
+            selection = self.tree_prix_energie.selection()
+            if not selection:
+                return
+            prix_id = int(self.tree_prix_energie.item(selection[0])["values"][0])
+            self.repository.supprimer_prix_energie_non_utilisee(prix_id)
+            self.rafraichir_prix_energie()
+            self.annuler_edition_prix()
+        except Exception as exc:
+            messagebox.showerror("Prix Energie", str(exc))
+
+    def charger_prix_pour_edition(self, _event):
+        try:
+            selection = self.tree_prix_energie.selection()
+            if not selection:
+                return
+            values = self.tree_prix_energie.item(selection[0])["values"]
+            self.prix_energie_en_edition_id = int(values[0])
+            self.var_prix_code_jour.set(str(values[1]))
+            self.var_prix_wh.set(str(values[2]))
+            self.btn_ajouter_prix.config(text="Mettre a jour")
+        except Exception as exc:
+            messagebox.showerror("Edition Prix", str(exc))
+
+    def annuler_edition_prix(self):
+        self.prix_energie_en_edition_id = None
+        self.var_prix_code_jour.set("OUVRABLE")
+        self.var_prix_wh.set("")
+        self.btn_ajouter_prix.config(text="Ajouter")
+        selection = self.tree_prix_energie.selection()
+        if selection:
+            self.tree_prix_energie.selection_remove(selection)
+
+    def rafraichir_prix_energie(self):
+        if self.repository.cnxn is None:
+            return
+
+        for item in self.tree_prix_energie.get_children():
+            self.tree_prix_energie.delete(item)
+        try:
+            self.prix_energie_actuels = self.repository.lister_prix_energie_non_utilisee()
+            for prix in self.prix_energie_actuels:
+                self.tree_prix_energie.insert(
+                    "",
+                    "end",
+                    values=(prix.id, prix.code_jour, f"{prix.prix_wh:.4f}"),
+                )
+        except Exception as exc:
+            messagebox.showerror("Prix Energie", str(exc))
+
     def _afficher_propositions_panneaux(self, propositions: list):
         """Affiche dynamiquement les propositions de panneaux"""
         try:
@@ -908,58 +1135,76 @@ class ApplicationTk(tk.Tk):
                 w.destroy()
 
             if not propositions:
+                tk.Label(
+                    self.propositions_container,
+                    text="Aucune proposition de panneau disponible.",
+                    bg=self.theme.get("primary"),
+                    fg="#d8e6ff",
+                    font=(self.theme.get("font_body"), 10),
+                    anchor="w",
+                ).pack(fill="x")
                 return
 
             for idx, prop in enumerate(propositions):
-                titre = f"PANNEAU: {prop.libelle_type.upper()} - RATIO {prop.ratio_couverture:.1%}"
+                titre = f"PANNEAU {prop.libelle_type.upper()}"
                 if prop.est_recommande:
-                    titre += " ✓ MEILLEUR PRIX"
+                    titre += "  •  MEILLEUR PRIX"
 
                 section = tk.Frame(
                     self.propositions_container,
-                    bg=self.theme.get("primary_container") if prop.est_recommande else self.theme.get("surface_container_low"),
+                    bg=self.theme.get("primary_container") if prop.est_recommande else self.theme.get("surface_container_lowest"),
                     highlightthickness=1,
-                    highlightbackground=self.theme.get("primary") if prop.est_recommande else "#cccccc",
+                    highlightbackground=self.theme.get("primary") if prop.est_recommande else self.theme.get("outline_variant"),
                 )
-                section.grid(row=0, column=idx, sticky="nsew", padx=(0 if idx == 0 else 12, 0))
+                section.grid(row=0, column=idx, sticky="nsew", padx=(0 if idx == 0 else 14, 0), pady=(0, 4))
 
                 tk.Label(
                     section,
                     text=titre,
                     bg=section.cget("bg"),
                     fg=self.theme.get("on_primary_container") if prop.est_recommande else self.theme.get("on_surface"),
-                    font=(self.theme.get("font_body"), 9, "bold"),
+                    font=(self.theme.get("font_body"), 10, "bold"),
                     anchor="w",
-                    wraplength=150,
-                ).pack(fill="x", padx=10, pady=(8, 4))
+                    wraplength=260,
+                ).pack(fill="x", padx=14, pady=(12, 4))
 
                 value_line = tk.Frame(section, bg=section.cget("bg"))
-                value_line.pack(fill="x", padx=10, pady=4)
+                value_line.pack(fill="x", padx=14, pady=(0, 6))
 
                 val = tk.Label(
                     value_line,
                     text=f"{prop.quantite_require:.0f}",
                     bg=section.cget("bg"),
                     fg=self.theme.get("primary") if prop.est_recommande else self.theme.get("on_surface"),
-                    font=(self.theme.get("font_display"), 14, "bold"),
+                    font=(self.theme.get("font_display"), 24, "bold"),
                 )
                 val.pack(side="left")
 
                 tk.Label(
                     value_line,
-                    text="  unités",
+                    text="unites",
                     bg=section.cget("bg"),
                     fg=self.theme.get("on_primary_container") if prop.est_recommande else self.theme.get("on_surface"),
-                    font=(self.theme.get("font_body"), 9),
+                    font=(self.theme.get("font_body"), 11),
                 ).pack(side="left", padx=(4, 0))
 
                 tk.Label(
                     section,
-                    text=f"Prix: {prop.prix_total:.2f} Ar",
+                    text=f"Prix total: {prop.prix_total:.2f} Ar",
+                    bg=section.cget("bg"),
+                    fg=self.theme.get("primary") if prop.est_recommande else self.theme.get("on_surface"),
+                    font=(self.theme.get("font_display"), 17, "bold"),
+                    anchor="w",
+                ).pack(fill="x", padx=14, pady=(0, 2))
+
+                tk.Label(
+                    section,
+                    text=f"Prix unitaire: {prop.prix_unitaire:.2f} Ar  |  Ratio: {prop.ratio_couverture:.1%}",
                     bg=section.cget("bg"),
                     fg=self.theme.get("on_primary_container") if prop.est_recommande else self.theme.get("on_surface_muted"),
                     font=(self.theme.get("font_body"), 9),
-                ).pack(fill="x", padx=10, pady=(0, 10))
+                    anchor="w",
+                ).pack(fill="x", padx=14, pady=(0, 12))
 
                 self.propositions_container.columnconfigure(idx, weight=1)
 

@@ -1,12 +1,25 @@
 -- Schema SQL Server minimal (creation manuelle)
 -- Stockage uniquement des informations d'entree de simulation
 
+-- effacer les tables si elles existent deja
+drop table if exists dbo.simulation_entree;
+drop table if exists dbo.type_panneau;
+drop table if exists dbo.prix_energie_non_utilisee;
+drop table if exists dbo.parametre;
+drop table if exists dbo.tranche_heure;
+drop table if exists dbo.simulation;
+GO
+
 IF OBJECT_ID('dbo.simulation_entree', 'U') IS NOT NULL
     DROP TABLE dbo.simulation_entree;
 GO
 
 IF OBJECT_ID('dbo.type_panneau', 'U') IS NOT NULL
     DROP TABLE dbo.type_panneau;
+GO
+
+IF OBJECT_ID('dbo.prix_energie_non_utilisee', 'U') IS NOT NULL
+    DROP TABLE dbo.prix_energie_non_utilisee;
 GO
 
 IF OBJECT_ID('dbo.parametre', 'U') IS NOT NULL
@@ -47,6 +60,17 @@ CREATE TABLE dbo.parametre (
 );
 GO
 
+CREATE TABLE dbo.prix_energie_non_utilisee (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    code_jour NVARCHAR(20) NOT NULL,
+    prix_wh DECIMAL(18,6) NOT NULL,
+    cree_le DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT uq_prix_energie_non_utilisee_code_jour UNIQUE (code_jour),
+    CONSTRAINT ck_prix_energie_non_utilisee_code_jour CHECK (code_jour IN ('OUVRABLE', 'WEEKEND')),
+    CONSTRAINT ck_prix_energie_non_utilisee_prix CHECK (prix_wh >= 0)
+);
+GO
+
 CREATE TABLE dbo.simulation_entree (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     simulation_id BIGINT NOT NULL,
@@ -84,6 +108,10 @@ GO
 
 CREATE INDEX idx_type_panneau_libelle
     ON dbo.type_panneau(libelle);
+GO
+
+CREATE INDEX idx_prix_energie_non_utilisee_code_jour
+    ON dbo.prix_energie_non_utilisee(code_jour);
 GO
 
 CREATE INDEX idx_parametre_code

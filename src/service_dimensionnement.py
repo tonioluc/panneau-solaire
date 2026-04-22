@@ -1,7 +1,7 @@
-from math import  ceil
 from dataclasses import replace
+from math import ceil
 
-from modeles import EntreeSimulation, ResultatSimulation, TrancheHoraire, TypePanneau, PropositionPanneau
+from modeles import EntreeSimulation, PropositionPanneau, ResultatSimulation, TrancheHoraire, TypePanneau
 
 
 class ServiceDimensionnement:
@@ -51,12 +51,24 @@ class ServiceDimensionnement:
 
         return result
 
+    def _duree_tranche_h(self, tranches: list[TrancheHoraire], libelle: str) -> float:
+        cible = libelle.upper().strip()
+        for tr in tranches:
+            if tr.libelle.upper().strip() != cible:
+                continue
+            tr_start = self._to_minutes(tr.heure_debut)
+            tr_end = self._to_minutes(tr.heure_fin)
+            segments = self._expand_interval(tr_start, tr_end)
+            return sum(te - ts for ts, te in segments) / 60.0
+        return 0.0
+
     def calculer(
         self,
         entrees: list[EntreeSimulation],
         parametres: dict[str, float] | None = None,
         tranches: list[TrancheHoraire] | None = None,
         types_panneau: list[TypePanneau] | None = None,
+        prix_energie_non_utilisee: dict[str, float] | None = None,
     ) -> ResultatSimulation:
         if not entrees:
             raise ValueError("Aucune entree dans la simulation")
@@ -74,6 +86,14 @@ class ServiceDimensionnement:
         }
         if parametres:
             p.update(parametres)
+
+        tarifs_energie = {
+            "OUVRABLE": 0.0,
+            "WEEKEND": 0.0,
+        }
+        if prix_energie_non_utilisee:
+            for code_jour, prix_wh in prix_energie_non_utilisee.items():
+                tarifs_energie[str(code_jour).upper().strip()] = float(prix_wh)
 
         energie = {"MATIN": 0.0, "SOIR": 0.0, "NUIT": 0.0}
         puissance = {"MATIN": 0.0, "SOIR": 0.0, "NUIT": 0.0}
@@ -101,6 +121,8 @@ class ServiceDimensionnement:
         facteur_marge_batterie = p["FACTEUR_MARGE_BATTERIE"]
         ratio_couverture_40 = p["RATIO_COUVERTURE_PANNEAU_40"]
         ratio_couverture_30 = p["RATIO_COUVERTURE_PANNEAU_30"]
+        prix_unitaire_ouvrable_ar_wh = tarifs_energie["OUVRABLE"]
+        prix_unitaire_weekend_ar_wh = tarifs_energie["WEEKEND"]
 
         if (
             duree_matin_h <= 0
@@ -109,8 +131,10 @@ class ServiceDimensionnement:
             or facteur_marge_batterie <= 0
             or ratio_couverture_40 <= 0
             or ratio_couverture_30 <= 0
+            or prix_unitaire_ouvrable_ar_wh < 0
+            or prix_unitaire_weekend_ar_wh < 0
         ):
-            raise ValueError("Parametres invalides dans la table parametre")
+            raise ValueError("Parametres ou tarifs invalides en base de donnees")
 
         puissance_charge_batterie_w = batterie_theorique_wh / duree_matin_h if batterie_theorique_wh > 0 else 0.0
 
@@ -120,13 +144,27 @@ class ServiceDimensionnement:
 
         panneau_pratique_achat_w = panneau_theorique_w / facteur_panneau_pratique
         batterie_pratique_achat_wh = batterie_theorique_wh * facteur_marge_batterie
-        convertisseur_propose_w = max(puissance["MATIN"], puissance["SOIR"]) * 2
+        pic_global_w = max(puissance["MATIN"] + puissance_charge_batterie_w, puissance["SOIR"])
+        convertisseur_propose_w = pic_global_w * 2
+
+        duree_soir_h = self._duree_tranche_h(tranches, "SOIR")
+
+        energie_disponible_matin_wh = panneau_theorique_w * duree_matin_h
+        energie_utilisee_matin_wh = energie["MATIN"] + batterie_theorique_wh
+        energie_non_utilisee_matin_wh = max(0.0, energie_disponible_matin_wh - energie_utilisee_matin_wh)
+
+        energie_disponible_soir_wh = panneau_theorique_w * facteur_soir * duree_soir_h
+        energie_non_utilisee_soir_wh = max(0.0, energie_disponible_soir_wh - energie["SOIR"])
+
+        energie_non_utilisee_totale_wh = energie_non_utilisee_matin_wh + energie_non_utilisee_soir_wh
+        prix_total_ouvrable_ar = energie_non_utilisee_totale_wh * prix_unitaire_ouvrable_ar_wh
+        prix_total_weekend_ar = energie_non_utilisee_totale_wh * prix_unitaire_weekend_ar_wh
 
         propositions_panneau: list[PropositionPanneau] = []
         if types_panneau:
             propositions_temporaires = []
             for type_p in types_panneau:
-                quantite =  ceil(panneau_theorique_w / (type_p.ratio_couverture * type_p.energie_unitaire_wh))
+                quantite = ceil(panneau_theorique_w / (type_p.ratio_couverture * type_p.energie_unitaire_wh))
                 prix_total = quantite * type_p.prix_unitaire
                 prop = PropositionPanneau(
                     id_type_panneau=type_p.id,
@@ -162,5 +200,12 @@ class ServiceDimensionnement:
             panneau_pratique_achat_w=panneau_pratique_achat_w,
             batterie_pratique_achat_wh=batterie_pratique_achat_wh,
             convertisseur_propose_w=convertisseur_propose_w,
+            energie_non_utilisee_matin_wh=energie_non_utilisee_matin_wh,
+            energie_non_utilisee_soir_wh=energie_non_utilisee_soir_wh,
+            energie_non_utilisee_totale_wh=energie_non_utilisee_totale_wh,
+            prix_unitaire_ouvrable_ar_wh=prix_unitaire_ouvrable_ar_wh,
+            prix_unitaire_weekend_ar_wh=prix_unitaire_weekend_ar_wh,
+            prix_total_ouvrable_ar=prix_total_ouvrable_ar,
+            prix_total_weekend_ar=prix_total_weekend_ar,
             propositions_panneau=propositions_panneau,
         )

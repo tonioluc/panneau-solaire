@@ -63,6 +63,20 @@ BEGIN
 END;
 GO
 
+IF NOT EXISTS (SELECT 1 FROM dbo.prix_energie_non_utilisee WHERE code_jour = 'OUVRABLE')
+BEGIN
+    INSERT INTO dbo.prix_energie_non_utilisee (code_jour, prix_wh)
+    VALUES ('OUVRABLE', 100.0);
+END;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.prix_energie_non_utilisee WHERE code_jour = 'WEEKEND')
+BEGIN
+    INSERT INTO dbo.prix_energie_non_utilisee (code_jour, prix_wh)
+    VALUES ('WEEKEND', 120.0);
+END;
+GO
+
 IF NOT EXISTS (SELECT 1 FROM dbo.type_panneau WHERE libelle = 'Panneau Standard 40%')
 BEGIN
     INSERT INTO dbo.type_panneau (libelle, ratio_couverture, energie_unitaire_wh, prix_unitaire)
