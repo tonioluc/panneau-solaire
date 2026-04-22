@@ -38,6 +38,8 @@ class TypePanneau:
 @dataclass(frozen=True)
 class PrixEnergieNonUtilisee:
     id: int
+    type_panneau_id: int
+    type_panneau_libelle: str
     code_jour: str
     prix_wh: float
 
@@ -48,9 +50,17 @@ class PropositionPanneau:
     libelle_type: str
     ratio_couverture: float
     puissance_propose_w: float
+    puissance_installee_equivalente_w: float
     quantite_require: float
     prix_unitaire: float
     prix_total: float
+    prix_energie_ouvrable_ar_wh: float
+    prix_energie_weekend_ar_wh: float
+    energie_non_utilisee_matin_wh: float
+    energie_non_utilisee_soir_wh: float
+    energie_non_utilisee_totale_wh: float
+    prix_total_ouvrable_ar: float
+    prix_total_weekend_ar: float
     est_recommande: bool
 
 

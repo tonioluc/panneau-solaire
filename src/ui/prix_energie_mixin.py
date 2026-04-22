@@ -10,13 +10,25 @@ class PrixEnergieMixin:
         form_card.pack(fill="x", pady=(12, 10))
 
         ttk.Label(form_card, text="Configuration prix energie non utilisee", style="Section.TLabel").grid(
-            row=0, column=0, columnspan=6, sticky="w", padx=14, pady=(12, 8)
+            row=0, column=0, columnspan=8, sticky="w", padx=14, pady=(12, 8)
         )
 
+        self.var_prix_type_panneau = tk.StringVar()
         self.var_prix_code_jour = tk.StringVar(value="OUVRABLE")
         self.var_prix_wh = tk.StringVar()
 
-        ttk.Label(form_card, text="Type de jour", style="Muted.TLabel").grid(row=1, column=0, padx=12, pady=6, sticky="w")
+        ttk.Label(form_card, text="Type de panneau", style="Muted.TLabel").grid(row=1, column=0, padx=12, pady=6, sticky="w")
+        self.cmb_prix_type_panneau = ttk.Combobox(
+            form_card,
+            textvariable=self.var_prix_type_panneau,
+            values=(),
+            width=28,
+            state="readonly",
+            style="App.TCombobox",
+        )
+        self.cmb_prix_type_panneau.grid(row=1, column=1, padx=6, pady=6, sticky="w")
+
+        ttk.Label(form_card, text="Type de jour", style="Muted.TLabel").grid(row=1, column=2, padx=12, pady=6, sticky="w")
         self.cmb_prix_code_jour = ttk.Combobox(
             form_card,
             textvariable=self.var_prix_code_jour,
@@ -25,13 +37,13 @@ class PrixEnergieMixin:
             state="readonly",
             style="App.TCombobox",
         )
-        self.cmb_prix_code_jour.grid(row=1, column=1, padx=6, pady=6, sticky="w")
+        self.cmb_prix_code_jour.grid(row=1, column=3, padx=6, pady=6, sticky="w")
 
         add_labeled_entry(
             form_card,
             row=1,
-            label_col=2,
-            entry_col=3,
+            label_col=4,
+            entry_col=5,
             label_text="Prix (Ar/Wh)",
             variable=self.var_prix_wh,
             width=14,
@@ -43,7 +55,7 @@ class PrixEnergieMixin:
             command=self.ajouter_prix_energie,
             style="Primary.TButton",
         )
-        self.btn_ajouter_prix.grid(row=1, column=4, padx=(10, 14), pady=6, sticky="e")
+        self.btn_ajouter_prix.grid(row=1, column=6, padx=(10, 14), pady=6, sticky="e")
 
         actions = ttk.Frame(self.tab_prix_energie, style="App.TFrame")
         actions.pack(fill="x", pady=(0, 8))
@@ -57,7 +69,7 @@ class PrixEnergieMixin:
 
         self.tree_prix_energie = ttk.Treeview(
             table_card,
-            columns=("id", "code_jour", "prix_wh"),
+            columns=("id", "type_panneau", "code_jour", "prix_wh"),
             show="headings",
             height=16,
             style="App.Treeview",
@@ -66,7 +78,8 @@ class PrixEnergieMixin:
             self.tree_prix_energie,
             [
                 ("id", 90),
-                ("code_jour", 200),
+                ("type_panneau", 280),
+                ("code_jour", 150),
                 ("prix_wh", 180),
             ],
         )
@@ -76,27 +89,30 @@ class PrixEnergieMixin:
 
     def ajouter_prix_energie(self):
         try:
+            type_label = self.var_prix_type_panneau.get().strip()
+            type_panneau_id = self.map_types_panneau.get(type_label)
             code_jour = self.var_prix_code_jour.get().strip().upper()
             prix_wh = float(self.var_prix_wh.get())
 
+            if not type_label or type_panneau_id is None:
+                raise ValueError("Type de panneau requis")
             if code_jour not in {"OUVRABLE", "WEEKEND"}:
                 raise ValueError("Type de jour invalide (OUVRABLE ou WEEKEND)")
             if prix_wh < 0:
                 raise ValueError("Prix doit etre >= 0")
 
             if self.prix_energie_en_edition_id is None:
-                self.repository.creer_prix_energie_non_utilisee(code_jour, prix_wh)
+                self.repository.creer_prix_energie_non_utilisee(type_panneau_id, code_jour, prix_wh)
             else:
                 self.repository.modifier_prix_energie_non_utilisee(
                     self.prix_energie_en_edition_id,
+                    type_panneau_id,
                     code_jour,
                     prix_wh,
                 )
                 self.prix_energie_en_edition_id = None
 
-            self.var_prix_code_jour.set("OUVRABLE")
-            self.var_prix_wh.set("")
-            self.btn_ajouter_prix.config(text="Ajouter")
+            self.annuler_edition_prix()
             self.rafraichir_prix_energie()
         except Exception as exc:
             messagebox.showerror("Prix Energie", str(exc))
@@ -126,14 +142,17 @@ class PrixEnergieMixin:
                 return
             values = self.tree_prix_energie.item(selection[0])["values"]
             self.prix_energie_en_edition_id = int(values[0])
-            self.var_prix_code_jour.set(str(values[1]))
-            self.var_prix_wh.set(str(values[2]))
+            self.var_prix_type_panneau.set(str(values[1]))
+            self.var_prix_code_jour.set(str(values[2]))
+            self.var_prix_wh.set(str(values[3]))
             self.btn_ajouter_prix.config(text="Mettre a jour")
         except Exception as exc:
             messagebox.showerror("Edition Prix", str(exc))
 
     def annuler_edition_prix(self):
         self.prix_energie_en_edition_id = None
+        if self.cmb_prix_type_panneau["values"]:
+            self.var_prix_type_panneau.set(str(self.cmb_prix_type_panneau["values"][0]))
         self.var_prix_code_jour.set("OUVRABLE")
         self.var_prix_wh.set("")
         self.btn_ajouter_prix.config(text="Ajouter")
@@ -141,9 +160,27 @@ class PrixEnergieMixin:
         if selection:
             self.tree_prix_energie.selection_remove(selection)
 
+    def _rafraichir_types_panneau_pour_prix(self):
+        self.map_types_panneau.clear()
+        types = self.repository.lister_types_panneau()
+        labels = []
+        for tp in types:
+            label = f"{tp.id} - {tp.libelle}"
+            labels.append(label)
+            self.map_types_panneau[label] = tp.id
+
+        self.cmb_prix_type_panneau["values"] = labels
+        if labels and self.var_prix_type_panneau.get() not in labels:
+            self.var_prix_type_panneau.set(labels[0])
+
     def rafraichir_prix_energie(self):
         if self.repository.cnxn is None:
             return
+
+        try:
+            self._rafraichir_types_panneau_pour_prix()
+        except Exception:
+            self.cmb_prix_type_panneau["values"] = ()
 
         for item in self.tree_prix_energie.get_children():
             self.tree_prix_energie.delete(item)
@@ -153,7 +190,12 @@ class PrixEnergieMixin:
                 self.tree_prix_energie.insert(
                     "",
                     "end",
-                    values=(prix.id, prix.code_jour, f"{prix.prix_wh:.4f}"),
+                    values=(
+                        prix.id,
+                        f"{prix.type_panneau_id} - {prix.type_panneau_libelle}",
+                        prix.code_jour,
+                        f"{prix.prix_wh:.4f}",
+                    ),
                 )
         except Exception as exc:
             messagebox.showerror("Prix Energie", str(exc))

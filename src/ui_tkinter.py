@@ -42,6 +42,7 @@ class ApplicationTk(
 
         self.type_panneau_en_edition_id: int | None = None
         self.types_panneau_actuels: list = []
+        self.map_types_panneau: dict[str, int] = {}
 
         self.prix_energie_en_edition_id: int | None = None
         self.prix_energie_actuels: list = []

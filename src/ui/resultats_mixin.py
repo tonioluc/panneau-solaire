@@ -374,6 +374,32 @@ class ResultatsMixin:
 
                 tk.Label(
                     section,
+                    text=(
+                        f"Energie non utilisee: {prop.energie_non_utilisee_totale_wh:.2f} Wh "
+                        f"(Matin: {prop.energie_non_utilisee_matin_wh:.2f}, Soir: {prop.energie_non_utilisee_soir_wh:.2f})"
+                    ),
+                    bg=section.cget("bg"),
+                    fg=self.theme.get("on_primary_container") if prop.est_recommande else self.theme.get("on_surface_muted"),
+                    font=(self.theme.get("font_body"), 9),
+                    anchor="w",
+                    wraplength=320,
+                ).pack(fill="x", padx=14, pady=(0, 2))
+
+                tk.Label(
+                    section,
+                    text=(
+                        f"Jour ouvrable: {prop.prix_energie_ouvrable_ar_wh:.4f} Ar/Wh -> {prop.prix_total_ouvrable_ar:.2f} Ar | "
+                        f"Week-end: {prop.prix_energie_weekend_ar_wh:.4f} Ar/Wh -> {prop.prix_total_weekend_ar:.2f} Ar"
+                    ),
+                    bg=section.cget("bg"),
+                    fg=self.theme.get("on_primary_container") if prop.est_recommande else self.theme.get("on_surface_muted"),
+                    font=(self.theme.get("font_body"), 9),
+                    anchor="w",
+                    wraplength=320,
+                ).pack(fill="x", padx=14, pady=(0, 2))
+
+                tk.Label(
+                    section,
                     text=f"Prix unitaire: {prop.prix_unitaire:.2f} Ar  |  Ratio: {prop.ratio_couverture:.1%}",
                     bg=section.cget("bg"),
                     fg=self.theme.get("on_primary_container") if prop.est_recommande else self.theme.get("on_surface_muted"),

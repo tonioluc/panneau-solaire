@@ -102,54 +102,62 @@ class RepositorySqlServer:
             base[str(code)] = float(valeur)
         return base
 
-    def charger_prix_energie_non_utilisee(self) -> dict[str, float]:
-        cur = self._executer("SELECT code_jour, prix_wh FROM dbo.prix_energie_non_utilisee")
-        base = {
-            "OUVRABLE": 0.0,
-            "WEEKEND": 0.0,
-        }
-        for code_jour, prix_wh in cur.fetchall():
-            base[str(code_jour).upper().strip()] = float(prix_wh)
+    def charger_prix_energie_non_utilisee(self) -> dict[int, dict[str, float]]:
+        cur = self._executer(
+            """
+            SELECT type_panneau_id, code_jour, prix_wh
+            FROM dbo.prix_energie_non_utilisee
+            """
+        )
+        base: dict[int, dict[str, float]] = {}
+        for type_panneau_id, code_jour, prix_wh in cur.fetchall():
+            type_id = int(type_panneau_id)
+            if type_id not in base:
+                base[type_id] = {"OUVRABLE": 0.0, "WEEKEND": 0.0}
+            base[type_id][str(code_jour).upper().strip()] = float(prix_wh)
         return base
 
     def lister_prix_energie_non_utilisee(self) -> list[PrixEnergieNonUtilisee]:
         cur = self._executer(
             """
-            SELECT id, code_jour, prix_wh
-            FROM dbo.prix_energie_non_utilisee
-            ORDER BY code_jour
+            SELECT p.id, p.type_panneau_id, t.libelle, p.code_jour, p.prix_wh
+            FROM dbo.prix_energie_non_utilisee p
+            INNER JOIN dbo.type_panneau t ON t.id = p.type_panneau_id
+            ORDER BY t.libelle, p.code_jour
             """
         )
         return [
             PrixEnergieNonUtilisee(
                 id=int(r[0]),
-                code_jour=str(r[1]),
-                prix_wh=float(r[2]),
+                type_panneau_id=int(r[1]),
+                type_panneau_libelle=str(r[2]),
+                code_jour=str(r[3]),
+                prix_wh=float(r[4]),
             )
             for r in cur.fetchall()
         ]
 
-    def creer_prix_energie_non_utilisee(self, code_jour: str, prix_wh: float) -> int:
+    def creer_prix_energie_non_utilisee(self, type_panneau_id: int, code_jour: str, prix_wh: float) -> int:
         cur = self._executer(
             """
-            INSERT INTO dbo.prix_energie_non_utilisee (code_jour, prix_wh)
+            INSERT INTO dbo.prix_energie_non_utilisee (type_panneau_id, code_jour, prix_wh)
             OUTPUT INSERTED.id
-            VALUES (?, ?)
+            VALUES (?, ?, ?)
             """,
-            [code_jour.upper().strip(), prix_wh],
+            [type_panneau_id, code_jour.upper().strip(), prix_wh],
         )
         prix_id = int(cur.fetchone()[0])
         self.cnxn.commit()
         return prix_id
 
-    def modifier_prix_energie_non_utilisee(self, prix_id: int, code_jour: str, prix_wh: float):
+    def modifier_prix_energie_non_utilisee(self, prix_id: int, type_panneau_id: int, code_jour: str, prix_wh: float):
         self._executer(
             """
             UPDATE dbo.prix_energie_non_utilisee
-            SET code_jour = ?, prix_wh = ?
+            SET type_panneau_id = ?, code_jour = ?, prix_wh = ?
             WHERE id = ?
             """,
-            [code_jour.upper().strip(), prix_wh, prix_id],
+            [type_panneau_id, code_jour.upper().strip(), prix_wh, prix_id],
         )
         self.cnxn.commit()
 

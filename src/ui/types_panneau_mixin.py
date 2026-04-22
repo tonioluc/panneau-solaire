@@ -119,6 +119,7 @@ class TypesPanneauMixin:
             self.var_type_energie.set("")
             self.var_type_prix.set("")
             self.rafraichir_types_panneau()
+            self.rafraichir_prix_energie()
         except Exception as exc:
             messagebox.showerror("Type Panneau", str(exc))
 
@@ -136,6 +137,7 @@ class TypesPanneauMixin:
             type_id = int(self.tree_types_panneau.item(selection[0])["values"][0])
             self.repository.supprimer_type_panneau(type_id)
             self.rafraichir_types_panneau()
+            self.rafraichir_prix_energie()
             self.annuler_edition_type()
         except Exception as exc:
             messagebox.showerror("Type Panneau", str(exc))

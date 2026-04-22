@@ -62,10 +62,11 @@ GO
 
 CREATE TABLE dbo.prix_energie_non_utilisee (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    type_panneau_id BIGINT NOT NULL,
     code_jour NVARCHAR(20) NOT NULL,
     prix_wh DECIMAL(18,6) NOT NULL,
     cree_le DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-    CONSTRAINT uq_prix_energie_non_utilisee_code_jour UNIQUE (code_jour),
+    CONSTRAINT uq_prix_energie_non_utilisee_type_jour UNIQUE (type_panneau_id, code_jour),
     CONSTRAINT ck_prix_energie_non_utilisee_code_jour CHECK (code_jour IN ('OUVRABLE', 'WEEKEND')),
     CONSTRAINT ck_prix_energie_non_utilisee_prix CHECK (prix_wh >= 0)
 );
@@ -110,8 +111,17 @@ CREATE INDEX idx_type_panneau_libelle
     ON dbo.type_panneau(libelle);
 GO
 
+ALTER TABLE dbo.prix_energie_non_utilisee
+ADD CONSTRAINT fk_prix_energie_non_utilisee_type_panneau
+    FOREIGN KEY (type_panneau_id) REFERENCES dbo.type_panneau(id) ON DELETE CASCADE;
+GO
+
 CREATE INDEX idx_prix_energie_non_utilisee_code_jour
     ON dbo.prix_energie_non_utilisee(code_jour);
+GO
+
+CREATE INDEX idx_prix_energie_non_utilisee_type_panneau_id
+    ON dbo.prix_energie_non_utilisee(type_panneau_id);
 GO
 
 CREATE INDEX idx_parametre_code

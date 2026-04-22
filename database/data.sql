@@ -63,30 +63,165 @@ BEGIN
 END;
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.prix_energie_non_utilisee WHERE code_jour = 'OUVRABLE')
-BEGIN
-    INSERT INTO dbo.prix_energie_non_utilisee (code_jour, prix_wh)
-    VALUES ('OUVRABLE', 100.0);
-END;
-GO
-
-IF NOT EXISTS (SELECT 1 FROM dbo.prix_energie_non_utilisee WHERE code_jour = 'WEEKEND')
-BEGIN
-    INSERT INTO dbo.prix_energie_non_utilisee (code_jour, prix_wh)
-    VALUES ('WEEKEND', 120.0);
-END;
-GO
-
 IF NOT EXISTS (SELECT 1 FROM dbo.type_panneau WHERE libelle = 'Panneau Standard 40%')
 BEGIN
     INSERT INTO dbo.type_panneau (libelle, ratio_couverture, energie_unitaire_wh, prix_unitaire)
-    VALUES ('Panneau Standard 40%', 0.4, 100.0, 150.0);
+    VALUES ('Panneau Standard 40%', 0.4, 110.0, 215000.0);
 END;
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.type_panneau WHERE libelle = 'Panneau Economique 30%')
 BEGIN
     INSERT INTO dbo.type_panneau (libelle, ratio_couverture, energie_unitaire_wh, prix_unitaire)
-    VALUES ('Panneau Economique 30%', 0.3, 80.0, 100.0);
+    VALUES ('Panneau Economique 30%', 0.3, 130.0, 200000.0);
 END;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.simulation WHERE titre = 'Simulation Maison')
+BEGIN
+    INSERT INTO dbo.simulation (titre, notes)
+    VALUES ('Simulation Maison', 'Jeu de donnees initial: charges domestiques');
+END;
+GO
+
+INSERT INTO dbo.simulation_entree (simulation_id, materiel, puissance_w, heure_debut, heure_fin)
+SELECT s.id, 'TV', 55.0, '08:00:00', '12:00:00'
+FROM dbo.simulation s
+WHERE s.titre = 'Simulation Maison'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.simulation_entree e
+        WHERE e.simulation_id = s.id
+            AND e.materiel = 'TV'
+            AND e.puissance_w = 55.0
+            AND e.heure_debut = '08:00:00'
+            AND e.heure_fin = '12:00:00'
+    );
+GO
+
+INSERT INTO dbo.simulation_entree (simulation_id, materiel, puissance_w, heure_debut, heure_fin)
+SELECT s.id, 'Ventilateur', 75.0, '10:00:00', '14:00:00'
+FROM dbo.simulation s
+WHERE s.titre = 'Simulation Maison'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.simulation_entree e
+        WHERE e.simulation_id = s.id
+            AND e.materiel = 'Ventilateur'
+            AND e.puissance_w = 75.0
+            AND e.heure_debut = '10:00:00'
+            AND e.heure_fin = '14:00:00'
+    );
+GO
+
+INSERT INTO dbo.simulation_entree (simulation_id, materiel, puissance_w, heure_debut, heure_fin)
+SELECT s.id, 'Refrigerateur', 120.0, '06:00:00', '17:00:00'
+FROM dbo.simulation s
+WHERE s.titre = 'Simulation Maison'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.simulation_entree e
+        WHERE e.simulation_id = s.id
+            AND e.materiel = 'Refrigerateur'
+            AND e.puissance_w = 120.0
+            AND e.heure_debut = '06:00:00'
+            AND e.heure_fin = '17:00:00'
+    );
+GO
+
+INSERT INTO dbo.simulation_entree (simulation_id, materiel, puissance_w, heure_debut, heure_fin)
+SELECT s.id, 'Lampe', 10.0, '17:00:00', '19:00:00'
+FROM dbo.simulation s
+WHERE s.titre = 'Simulation Maison'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.simulation_entree e
+        WHERE e.simulation_id = s.id
+            AND e.materiel = 'Lampe'
+            AND e.puissance_w = 10.0
+            AND e.heure_debut = '17:00:00'
+            AND e.heure_fin = '19:00:00'
+    );
+GO
+
+INSERT INTO dbo.simulation_entree (simulation_id, materiel, puissance_w, heure_debut, heure_fin)
+SELECT s.id, 'TV', 55.0, '17:00:00', '19:00:00'
+FROM dbo.simulation s
+WHERE s.titre = 'Simulation Maison'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.simulation_entree e
+        WHERE e.simulation_id = s.id
+            AND e.materiel = 'TV'
+            AND e.puissance_w = 55.0
+            AND e.heure_debut = '17:00:00'
+            AND e.heure_fin = '19:00:00'
+    );
+GO
+
+INSERT INTO dbo.simulation_entree (simulation_id, materiel, puissance_w, heure_debut, heure_fin)
+SELECT s.id, 'Routeur Wifi', 10.0, '19:00:00', '06:00:00'
+FROM dbo.simulation s
+WHERE s.titre = 'Simulation Maison'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.simulation_entree e
+        WHERE e.simulation_id = s.id
+            AND e.materiel = 'Routeur Wifi'
+            AND e.puissance_w = 10.0
+            AND e.heure_debut = '19:00:00'
+            AND e.heure_fin = '06:00:00'
+    );
+GO
+
+INSERT INTO dbo.simulation_entree (simulation_id, materiel, puissance_w, heure_debut, heure_fin)
+SELECT s.id, 'Refrigerateur', 120.0, '19:00:00', '06:00:00'
+FROM dbo.simulation s
+WHERE s.titre = 'Simulation Maison'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.simulation_entree e
+        WHERE e.simulation_id = s.id
+            AND e.materiel = 'Refrigerateur'
+            AND e.puissance_w = 120.0
+            AND e.heure_debut = '19:00:00'
+            AND e.heure_fin = '06:00:00'
+    );
+GO
+
+INSERT INTO dbo.simulation_entree (simulation_id, materiel, puissance_w, heure_debut, heure_fin)
+SELECT s.id, 'Lampe', 10.0, '19:00:00', '23:00:00'
+FROM dbo.simulation s
+WHERE s.titre = 'Simulation Maison'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.simulation_entree e
+        WHERE e.simulation_id = s.id
+            AND e.materiel = 'Lampe'
+            AND e.puissance_w = 10.0
+            AND e.heure_debut = '19:00:00'
+            AND e.heure_fin = '23:00:00'
+    );
+GO
+
+INSERT INTO dbo.prix_energie_non_utilisee (type_panneau_id, code_jour, prix_wh)
+SELECT tp.id, 'OUVRABLE', 100.0
+FROM dbo.type_panneau tp
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM dbo.prix_energie_non_utilisee p
+        WHERE p.type_panneau_id = tp.id
+            AND p.code_jour = 'OUVRABLE'
+);
+GO
+
+INSERT INTO dbo.prix_energie_non_utilisee (type_panneau_id, code_jour, prix_wh)
+SELECT tp.id, 'WEEKEND', 120.0
+FROM dbo.type_panneau tp
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM dbo.prix_energie_non_utilisee p
+        WHERE p.type_panneau_id = tp.id
+            AND p.code_jour = 'WEEKEND'
+);
 GO
