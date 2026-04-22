@@ -8,12 +8,14 @@ class ResultatsMixin:
         pratique_title = "Resultats principaux"
         details_title = "Details techniques"
 
-        top = ttk.Frame(self.tab_resultat, style="App.TFrame")
+        content = self._create_result_scrollable_content()
+
+        top = ttk.Frame(content, style="App.TFrame")
         top.pack(fill="x", pady=(12, 10))
 
         ttk.Button(top, text=calculer_text, command=self.calculer, style="Primary.TButton").pack(side="right")
 
-        practical_bg = tk.Frame(self.tab_resultat, bg=self.theme.get("primary"))
+        practical_bg = tk.Frame(content, bg=self.theme.get("primary"))
         practical_bg.pack(fill="x", pady=(0, 10))
 
         title = tk.Label(
@@ -69,8 +71,8 @@ class ResultatsMixin:
         self.propositions_container = tk.Frame(practical_bg, bg=self.theme.get("primary"))
         self.propositions_container.pack(fill="x", padx=20, pady=(0, 18))
 
-        details_card = ttk.Frame(self.tab_resultat, style="Card.TFrame")
-        details_card.pack(fill="both", expand=True)
+        details_card = ttk.Frame(content, style="Card.TFrame")
+        details_card.pack(fill="x", pady=(0, 12))
 
         ttk.Label(details_card, text=details_title, style="Section.TLabel").pack(anchor="w", padx=14, pady=(12, 8))
 
@@ -88,6 +90,64 @@ class ResultatsMixin:
         self._detail_chip(details_grid, "Batterie theorique", "batterie_theorique_wh", "Wh", 2, 0)
         self._detail_chip(details_grid, "Charge batterie", "puissance_charge_batterie_w", "W", 2, 1)
         self._detail_chip(details_grid, "Panneau final", "panneau_theorique_w", "W", 2, 2)
+
+    def _create_result_scrollable_content(self) -> ttk.Frame:
+        canvas_bg = (
+            self.theme.get("surface_container_lowest")
+            if self.personalized_layout
+            else self.theme.get("surface")
+        )
+
+        root = ttk.Frame(self.tab_resultat, style="App.TFrame")
+        root.pack(fill="both", expand=True)
+
+        canvas = tk.Canvas(
+            root,
+            bg=canvas_bg,
+            highlightthickness=0,
+            bd=0,
+        )
+        scrollbar = ttk.Scrollbar(root, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        content = ttk.Frame(canvas, style="App.TFrame")
+        window_id = canvas.create_window((0, 0), window=content, anchor="nw")
+
+        content.bind(
+            "<Configure>",
+            lambda _e: canvas.configure(scrollregion=canvas.bbox("all")),
+        )
+        canvas.bind(
+            "<Configure>",
+            lambda e: canvas.itemconfigure(window_id, width=e.width),
+        )
+
+        def _bind_wheel(_event):
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+            canvas.bind_all("<Button-4>", _on_mousewheel_linux)
+            canvas.bind_all("<Button-5>", _on_mousewheel_linux)
+
+        def _unbind_wheel(_event):
+            canvas.unbind_all("<MouseWheel>")
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
+
+        def _on_mousewheel(event):
+            delta = -1 if event.delta > 0 else 1
+            canvas.yview_scroll(delta, "units")
+
+        def _on_mousewheel_linux(event):
+            delta = -1 if event.num == 4 else 1
+            canvas.yview_scroll(delta, "units")
+
+        canvas.bind("<Enter>", _bind_wheel)
+        canvas.bind("<Leave>", _unbind_wheel)
+
+        self._result_scroll_canvas = canvas
+        return content
 
     def _detail_chip(self, parent: tk.Frame, title: str, key: str, unit: str, row: int, col: int):
         card = tk.Frame(parent, bg=self.theme.get("surface_container_lowest"))
