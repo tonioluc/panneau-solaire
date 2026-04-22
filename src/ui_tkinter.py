@@ -27,6 +27,8 @@ class ApplicationTk(tk.Tk):
 
         self.entree_en_edition_id: int | None = None
         self.result_labels: dict[str, tk.Label] = {}
+        self.result_secondary_labels: dict[str, tk.Label] = {}
+        self.result_secondary_specs: dict[str, tuple[str, int]] = {}
 
         self.type_panneau_en_edition_id: int | None = None
         self.types_panneau_actuels: list = []
@@ -371,9 +373,26 @@ class ApplicationTk(tk.Tk):
         self._hero_metric(practical_values, "CONVERTISSEUR PROPOSE", "convertisseur_propose_kw", "kW", 1, 0)
         self._hero_metric(practical_values, "ENERGIE NON UTILISEE", "energie_non_utilisee_kwh", "kWh", 2, 0)
 
-        self._hero_metric(practical_values, "VALEUR JOUR OUVRABLE", "prix_total_ouvrable_ar", "Ar", 0, 1)
-        self._hero_metric(practical_values, "VALEUR WEEK-END", "prix_total_weekend_ar", "Ar", 1, 1)
+        self._hero_metric(
+            practical_values,
+            "PRIX UNITAIRE OUVRABLE",
+            "prix_unitaire_ouvrable_ar_wh",
+            "Ar/Wh",
+            0,
+            1,
+        )
+        self._hero_metric(
+            practical_values,
+            "PRIX UNITAIRE WEEK-END",
+            "prix_unitaire_weekend_ar_wh",
+            "Ar/Wh",
+            1,
+            1,
+        )
         self._hero_metric(practical_values, "MEILLEUR PRIX PANNEAU", "meilleur_panneau_prix_ar", "Ar", 2, 1)
+
+        self._hero_metric(practical_values, "TOTAL JOUR OUVRABLE", "prix_total_ouvrable_ar", "Ar", 0, 2)
+        self._hero_metric(practical_values, "TOTAL WEEK-END", "prix_total_weekend_ar", "Ar", 1, 2)
 
         for col in range(3):
             practical_values.columnconfigure(col, weight=1)
@@ -627,14 +646,25 @@ class ApplicationTk(tk.Tk):
         self.result_labels[key] = val
         parent.columnconfigure(col, weight=1)
 
-    def _hero_metric(self, parent: tk.Frame, title: str, key: str, unit: str, col: int, row: int = 0):
+    def _hero_metric(
+        self,
+        parent: tk.Frame,
+        title: str,
+        key: str,
+        unit: str,
+        col: int,
+        row: int = 0,
+        secondary_key: str | None = None,
+        secondary_unit: str = "",
+        secondary_decimals: int = 3,
+    ):
         section = tk.Frame(parent, bg=self.theme.get("primary"))
         section.grid(
             row=row,
             column=col,
             sticky="nsew",
             padx=(0 if col == 0 else 16, 0),
-            pady=(0, 12 if row == 0 else 0),
+            pady=(0, 10 if row < 2 else 0),
         )
 
         tk.Label(
@@ -667,6 +697,19 @@ class ApplicationTk(tk.Tk):
         ).pack(side="left", padx=(6, 0), pady=(10, 0))
 
         self.result_labels[key] = val
+
+        if secondary_key:
+            secondary = tk.Label(
+                value_line,
+                text=f"(0.{('0' * secondary_decimals)} {secondary_unit})",
+                bg=self.theme.get("primary"),
+                fg="#caefe0",
+                font=(self.theme.get("font_body"), 11),
+            )
+            secondary.pack(side="left", padx=(10, 0), pady=(14, 0))
+            self.result_secondary_labels[secondary_key] = secondary
+            self.result_secondary_specs[secondary_key] = (secondary_unit, secondary_decimals)
+
         parent.columnconfigure(col, weight=1)
 
     def _proposal_metric(self, parent: tk.Frame, title: str, key: str, unit: str, col: int):
@@ -888,6 +931,12 @@ class ApplicationTk(tk.Tk):
         if key in self.result_labels:
             self.result_labels[key].config(text=f"{value:.{decimals}f}")
 
+    def _set_result_secondary_value(self, key: str, value: float):
+        if key in self.result_secondary_labels:
+            unit, decimals = self.result_secondary_specs.get(key, ("", 2))
+            unit_text = f" {unit}" if unit else ""
+            self.result_secondary_labels[key].config(text=f"({value:.{decimals}f}{unit_text})")
+
     def _validate_hhmm(self, text: str):
         try:
             datetime.strptime(text, "%H:%M")
@@ -896,7 +945,16 @@ class ApplicationTk(tk.Tk):
 
     def _reset_result_values(self):
         for key, label in self.result_labels.items():
-            label.config(text="0.000" if key.endswith("kw") or key.endswith("kwh") else "0.00")
+            if key.endswith("kw") or key.endswith("kwh"):
+                label.config(text="0.000")
+            elif key.endswith("ar_wh"):
+                label.config(text="0.0000")
+            else:
+                label.config(text="0.00")
+        for key, label in self.result_secondary_labels.items():
+            unit, decimals = self.result_secondary_specs.get(key, ("", 3))
+            unit_text = f" {unit}" if unit else ""
+            label.config(text=f"(0.{('0' * decimals)}{unit_text})")
 
     def calculer(self):
         try:
@@ -931,7 +989,8 @@ class ApplicationTk(tk.Tk):
             self._set_result_value("panneau_pratique_kw", resultat.panneau_pratique_achat_w / 1000.0, 3)
             self._set_result_value("batterie_pratique_kwh", resultat.batterie_pratique_achat_wh / 1000.0, 3)
             self._set_result_value("convertisseur_propose_kw", resultat.convertisseur_propose_w / 1000.0, 3)
-            self._set_result_value("energie_non_utilisee_kwh", resultat.energie_non_utilisee_totale_wh / 1000.0, 3)
+            energie_non_utilisee_kwh = resultat.energie_non_utilisee_totale_wh / 1000.0
+            self._set_result_value("energie_non_utilisee_kwh", energie_non_utilisee_kwh, 3)
 
             self._set_result_value("energie_non_utilisee_matin_wh", resultat.energie_non_utilisee_matin_wh)
             self._set_result_value("energie_non_utilisee_soir_wh", resultat.energie_non_utilisee_soir_wh)
