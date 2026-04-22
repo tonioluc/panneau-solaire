@@ -3,7 +3,7 @@ from datetime import time
 
 import pyodbc
 
-from modeles import EntreeSimulation, PrixEnergieNonUtilisee, Simulation, TrancheHoraire, TypePanneau
+from modeles import EntreeSimulation, MajorationHeurePointe, PrixEnergieNonUtilisee, Simulation, TrancheHoraire, TypePanneau
 
 
 class RepositorySqlServer:
@@ -117,6 +117,30 @@ class RepositorySqlServer:
             base[type_id][str(code_jour).upper().strip()] = float(prix_wh)
         return base
 
+    def charger_majorations_heure_pointe(self) -> dict[str, list[tuple[str, str, float]]]:
+        cur = self._executer(
+            """
+            SELECT code_jour, heure_debut, heure_fin, taux_majoration
+            FROM dbo.majoration_heure_pointe
+            """
+        )
+        base: dict[str, list[tuple[str, str, float]]] = {
+            "OUVRABLE": [],
+            "WEEKEND": [],
+        }
+        for code_jour, heure_debut, heure_fin, taux_majoration in cur.fetchall():
+            key = str(code_jour).upper().strip()
+            if key not in base:
+                base[key] = []
+            base[key].append(
+                (
+                    self._format_time(heure_debut),
+                    self._format_time(heure_fin),
+                    float(taux_majoration),
+                )
+            )
+        return base
+
     def lister_prix_energie_non_utilisee(self) -> list[PrixEnergieNonUtilisee]:
         cur = self._executer(
             """
@@ -163,6 +187,66 @@ class RepositorySqlServer:
 
     def supprimer_prix_energie_non_utilisee(self, prix_id: int):
         self._executer("DELETE FROM dbo.prix_energie_non_utilisee WHERE id = ?", [prix_id])
+        self.cnxn.commit()
+
+    def lister_majorations_heure_pointe(self) -> list[MajorationHeurePointe]:
+        cur = self._executer(
+            """
+            SELECT id, code_jour, heure_debut, heure_fin, taux_majoration
+            FROM dbo.majoration_heure_pointe
+            ORDER BY code_jour, heure_debut
+            """
+        )
+        return [
+            MajorationHeurePointe(
+                id=int(r[0]),
+                code_jour=str(r[1]),
+                heure_debut=self._format_time(r[2]),
+                heure_fin=self._format_time(r[3]),
+                taux_majoration=float(r[4]),
+            )
+            for r in cur.fetchall()
+        ]
+
+    def creer_majoration_heure_pointe(
+        self,
+        code_jour: str,
+        heure_debut: str,
+        heure_fin: str,
+        taux_majoration: float,
+    ) -> int:
+        cur = self._executer(
+            """
+            INSERT INTO dbo.majoration_heure_pointe (code_jour, heure_debut, heure_fin, taux_majoration)
+            OUTPUT INSERTED.id
+            VALUES (?, ?, ?, ?)
+            """,
+            [code_jour.upper().strip(), heure_debut, heure_fin, taux_majoration],
+        )
+        majoration_id = int(cur.fetchone()[0])
+        self.cnxn.commit()
+        return majoration_id
+
+    def modifier_majoration_heure_pointe(
+        self,
+        majoration_id: int,
+        code_jour: str,
+        heure_debut: str,
+        heure_fin: str,
+        taux_majoration: float,
+    ):
+        self._executer(
+            """
+            UPDATE dbo.majoration_heure_pointe
+            SET code_jour = ?, heure_debut = ?, heure_fin = ?, taux_majoration = ?
+            WHERE id = ?
+            """,
+            [code_jour.upper().strip(), heure_debut, heure_fin, taux_majoration, majoration_id],
+        )
+        self.cnxn.commit()
+
+    def supprimer_majoration_heure_pointe(self, majoration_id: int):
+        self._executer("DELETE FROM dbo.majoration_heure_pointe WHERE id = ?", [majoration_id])
         self.cnxn.commit()
 
     def creer_simulation(self, titre: str, notes: str | None) -> int:

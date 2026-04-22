@@ -63,6 +63,24 @@ BEGIN
 END;
 GO
 
+INSERT INTO dbo.majoration_heure_pointe (code_jour, heure_debut, heure_fin, taux_majoration)
+SELECT v.code_jour, v.heure_debut, v.heure_fin, v.taux_majoration
+FROM (
+    VALUES
+        ('OUVRABLE', '12:00:00', '14:00:00', 5.0),
+        ('OUVRABLE', '17:00:00', '19:00:00', 5.0),
+        ('WEEKEND', '12:00:00', '14:00:00', 5.0),
+        ('WEEKEND', '17:00:00', '19:00:00', 5.0)
+) AS v(code_jour, heure_debut, heure_fin, taux_majoration)
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM dbo.majoration_heure_pointe m
+    WHERE m.code_jour = v.code_jour
+      AND m.heure_debut = v.heure_debut
+      AND m.heure_fin = v.heure_fin
+);
+GO
+
 IF NOT EXISTS (SELECT 1 FROM dbo.type_panneau WHERE libelle = 'Panneau Standard 40%')
 BEGIN
     INSERT INTO dbo.type_panneau (libelle, ratio_couverture, energie_unitaire_wh, prix_unitaire)

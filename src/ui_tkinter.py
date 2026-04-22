@@ -46,6 +46,8 @@ class ApplicationTk(
 
         self.prix_energie_en_edition_id: int | None = None
         self.prix_energie_actuels: list = []
+        self.majoration_heure_pointe_en_edition_id: int | None = None
+        self.majorations_heure_pointe_actuelles: list = []
 
         self._build_ui()
         self._connect_db()

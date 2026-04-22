@@ -4,6 +4,7 @@
 -- effacer les tables si elles existent deja
 drop table if exists dbo.simulation_entree;
 drop table if exists dbo.type_panneau;
+drop table if exists dbo.majoration_heure_pointe;
 drop table if exists dbo.prix_energie_non_utilisee;
 drop table if exists dbo.parametre;
 drop table if exists dbo.tranche_heure;
@@ -16,6 +17,10 @@ GO
 
 IF OBJECT_ID('dbo.type_panneau', 'U') IS NOT NULL
     DROP TABLE dbo.type_panneau;
+GO
+
+IF OBJECT_ID('dbo.majoration_heure_pointe', 'U') IS NOT NULL
+    DROP TABLE dbo.majoration_heure_pointe;
 GO
 
 IF OBJECT_ID('dbo.prix_energie_non_utilisee', 'U') IS NOT NULL
@@ -72,6 +77,20 @@ CREATE TABLE dbo.prix_energie_non_utilisee (
 );
 GO
 
+CREATE TABLE dbo.majoration_heure_pointe (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    code_jour NVARCHAR(20) NOT NULL,
+    heure_debut TIME NOT NULL,
+    heure_fin TIME NOT NULL,
+    taux_majoration DECIMAL(8,4) NOT NULL,
+    cree_le DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT uq_majoration_heure_pointe UNIQUE (code_jour, heure_debut, heure_fin),
+    CONSTRAINT ck_majoration_heure_pointe_code_jour CHECK (code_jour IN ('OUVRABLE', 'WEEKEND')),
+    CONSTRAINT ck_majoration_heure_pointe_taux CHECK (taux_majoration >= 0),
+    CONSTRAINT ck_majoration_heure_pointe_heure_diff CHECK (heure_debut <> heure_fin)
+);
+GO
+
 CREATE TABLE dbo.simulation_entree (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     simulation_id BIGINT NOT NULL,
@@ -122,6 +141,10 @@ GO
 
 CREATE INDEX idx_prix_energie_non_utilisee_type_panneau_id
     ON dbo.prix_energie_non_utilisee(type_panneau_id);
+GO
+
+CREATE INDEX idx_majoration_heure_pointe_code_jour
+    ON dbo.majoration_heure_pointe(code_jour);
 GO
 
 CREATE INDEX idx_parametre_code

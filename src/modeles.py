@@ -45,6 +45,15 @@ class PrixEnergieNonUtilisee:
 
 
 @dataclass(frozen=True)
+class MajorationHeurePointe:
+    id: int
+    code_jour: str
+    heure_debut: str
+    heure_fin: str
+    taux_majoration: float
+
+
+@dataclass(frozen=True)
 class PropositionPanneau:
     id_type_panneau: int
     libelle_type: str
@@ -59,6 +68,8 @@ class PropositionPanneau:
     energie_non_utilisee_matin_wh: float
     energie_non_utilisee_soir_wh: float
     energie_non_utilisee_totale_wh: float
+    taux_majoration_effective_ouvrable_pct: float
+    taux_majoration_effective_weekend_pct: float
     prix_total_ouvrable_ar: float
     prix_total_weekend_ar: float
     est_recommande: bool

@@ -33,28 +33,7 @@ class ResultatsMixin:
 
         self._hero_metric(practical_values, "BATTERIE A ACHETER", "batterie_pratique_kwh", "kWh", 0, 0)
         self._hero_metric(practical_values, "CONVERTISSEUR PROPOSE", "convertisseur_propose_kw", "kW", 1, 0)
-        self._hero_metric(practical_values, "ENERGIE NON UTILISEE", "energie_non_utilisee_kwh", "kWh", 2, 0)
-
-        self._hero_metric(
-            practical_values,
-            "PRIX UNITAIRE OUVRABLE",
-            "prix_unitaire_ouvrable_ar_wh",
-            "Ar/Wh",
-            0,
-            1,
-        )
-        self._hero_metric(
-            practical_values,
-            "PRIX UNITAIRE WEEK-END",
-            "prix_unitaire_weekend_ar_wh",
-            "Ar/Wh",
-            1,
-            1,
-        )
-        self._hero_metric(practical_values, "MEILLEUR PRIX PANNEAU", "meilleur_panneau_prix_ar", "Ar", 2, 1)
-
-        self._hero_metric(practical_values, "TOTAL JOUR OUVRABLE", "prix_total_ouvrable_ar", "Ar", 0, 2)
-        self._hero_metric(practical_values, "TOTAL WEEK-END", "prix_total_weekend_ar", "Ar", 1, 2)
+        self._hero_metric(practical_values, "MEILLEUR PRIX PANNEAU", "meilleur_panneau_prix_ar", "Ar", 2, 0)
 
         for col in range(3):
             practical_values.columnconfigure(col, weight=1)
@@ -258,12 +237,14 @@ class ResultatsMixin:
             tranches = self.repository.lister_tranches_detail()
             types_panneau = self.repository.lister_types_panneau()
             prix_energie_non_utilisee = self.repository.charger_prix_energie_non_utilisee()
+            majorations_heure_pointe = self.repository.charger_majorations_heure_pointe()
             resultat = self.service.calculer(
                 entrees,
                 parametres,
                 tranches,
                 types_panneau,
                 prix_energie_non_utilisee,
+                majorations_heure_pointe,
             )
 
             self._set_result_value("energie_matin_wh", resultat.energie_matin_wh)
@@ -281,15 +262,6 @@ class ResultatsMixin:
             self._set_result_value("panneau_pratique_kw", resultat.panneau_pratique_achat_w / 1000.0, 3)
             self._set_result_value("batterie_pratique_kwh", resultat.batterie_pratique_achat_wh / 1000.0, 3)
             self._set_result_value("convertisseur_propose_kw", resultat.convertisseur_propose_w / 1000.0, 3)
-            self._set_result_value("energie_non_utilisee_kwh", resultat.energie_non_utilisee_totale_wh / 1000.0, 3)
-
-            self._set_result_value("energie_non_utilisee_matin_wh", resultat.energie_non_utilisee_matin_wh)
-            self._set_result_value("energie_non_utilisee_soir_wh", resultat.energie_non_utilisee_soir_wh)
-            self._set_result_value("energie_non_utilisee_totale_wh", resultat.energie_non_utilisee_totale_wh)
-            self._set_result_value("prix_unitaire_ouvrable_ar_wh", resultat.prix_unitaire_ouvrable_ar_wh, 4)
-            self._set_result_value("prix_unitaire_weekend_ar_wh", resultat.prix_unitaire_weekend_ar_wh, 4)
-            self._set_result_value("prix_total_ouvrable_ar", resultat.prix_total_ouvrable_ar)
-            self._set_result_value("prix_total_weekend_ar", resultat.prix_total_weekend_ar)
 
             meilleur_prix_panneau_ar = 0.0
             if resultat.propositions_panneau:
@@ -388,8 +360,10 @@ class ResultatsMixin:
                 tk.Label(
                     section,
                     text=(
-                        f"Jour ouvrable: {prop.prix_energie_ouvrable_ar_wh:.4f} Ar/Wh -> {prop.prix_total_ouvrable_ar:.2f} Ar | "
-                        f"Week-end: {prop.prix_energie_weekend_ar_wh:.4f} Ar/Wh -> {prop.prix_total_weekend_ar:.2f} Ar"
+                        f"Jour ouvrable: {prop.prix_energie_ouvrable_ar_wh:.4f} Ar/Wh "
+                        f"(+{prop.taux_majoration_effective_ouvrable_pct:.2f}% pointe) -> {prop.prix_total_ouvrable_ar:.2f} Ar | "
+                        f"Week-end: {prop.prix_energie_weekend_ar_wh:.4f} Ar/Wh "
+                        f"(+{prop.taux_majoration_effective_weekend_pct:.2f}% pointe) -> {prop.prix_total_weekend_ar:.2f} Ar"
                     ),
                     bg=section.cget("bg"),
                     fg=self.theme.get("on_primary_container") if prop.est_recommande else self.theme.get("on_surface_muted"),

@@ -62,6 +62,78 @@ class ServiceDimensionnement:
             return sum(te - ts for ts, te in segments) / 60.0
         return 0.0
 
+    def _intervalle_tranche(self, tranches: list[TrancheHoraire], libelle: str) -> tuple[int, int] | None:
+        cible = libelle.upper().strip()
+        for tr in tranches:
+            if tr.libelle.upper().strip() == cible:
+                return (self._to_minutes(tr.heure_debut), self._to_minutes(tr.heure_fin))
+        return None
+
+    def _duree_chevauchement_h(
+        self,
+        start_a: int,
+        end_a: int,
+        start_b: int,
+        end_b: int,
+    ) -> float:
+        segments_a = self._expand_interval(start_a, end_a)
+        segments_b = self._expand_interval(start_b, end_b)
+
+        minutes = 0
+        for sa, ea in segments_a:
+            for sb, eb in segments_b:
+                overlap_start = max(sa, sb)
+                overlap_end = min(ea, eb)
+                if overlap_end > overlap_start:
+                    minutes += overlap_end - overlap_start
+        return minutes / 60.0
+
+    def _energie_majoree_equivalente_wh(
+        self,
+        tranches: list[TrancheHoraire],
+        energie_matin_wh: float,
+        energie_soir_wh: float,
+        majorations: list[tuple[str, str, float]] | None,
+    ) -> float:
+        if not majorations:
+            return 0.0
+
+        intervalle_matin = self._intervalle_tranche(tranches, "MATIN")
+        intervalle_soir = self._intervalle_tranche(tranches, "SOIR")
+        duree_matin_h = self._duree_tranche_h(tranches, "MATIN")
+        duree_soir_h = self._duree_tranche_h(tranches, "SOIR")
+
+        equivalent_wh = 0.0
+        for heure_debut, heure_fin, taux_majoration in majorations:
+            taux = float(taux_majoration) / 100.0
+            if taux <= 0:
+                continue
+
+            slot_start = self._to_minutes(heure_debut)
+            slot_end = self._to_minutes(heure_fin)
+
+            if intervalle_matin and duree_matin_h > 0 and energie_matin_wh > 0:
+                chevauchement_matin_h = self._duree_chevauchement_h(
+                    intervalle_matin[0],
+                    intervalle_matin[1],
+                    slot_start,
+                    slot_end,
+                )
+                if chevauchement_matin_h > 0:
+                    equivalent_wh += energie_matin_wh * (chevauchement_matin_h / duree_matin_h) * taux
+
+            if intervalle_soir and duree_soir_h > 0 and energie_soir_wh > 0:
+                chevauchement_soir_h = self._duree_chevauchement_h(
+                    intervalle_soir[0],
+                    intervalle_soir[1],
+                    slot_start,
+                    slot_end,
+                )
+                if chevauchement_soir_h > 0:
+                    equivalent_wh += energie_soir_wh * (chevauchement_soir_h / duree_soir_h) * taux
+
+        return equivalent_wh
+
     def calculer(
         self,
         entrees: list[EntreeSimulation],
@@ -69,6 +141,7 @@ class ServiceDimensionnement:
         tranches: list[TrancheHoraire] | None = None,
         types_panneau: list[TypePanneau] | None = None,
         prix_energie_non_utilisee: dict[int, dict[str, float]] | None = None,
+        majorations_heure_pointe: dict[str, list[tuple[str, str, float]]] | None = None,
     ) -> ResultatSimulation:
         if not entrees:
             raise ValueError("Aucune entree dans la simulation")
@@ -173,9 +246,42 @@ class ServiceDimensionnement:
                 energie_non_utilisee_soir_type_wh = max(0.0, energie_disponible_soir_type_wh - energie["SOIR"])
                 energie_non_utilisee_totale_type_wh = energie_non_utilisee_matin_type_wh + energie_non_utilisee_soir_type_wh
 
+                majorations_ouvrable = (
+                    majorations_heure_pointe.get("OUVRABLE", [])
+                    if majorations_heure_pointe
+                    else []
+                )
+                majorations_weekend = (
+                    majorations_heure_pointe.get("WEEKEND", [])
+                    if majorations_heure_pointe
+                    else []
+                )
+                energie_majoree_ouvrable_wh = self._energie_majoree_equivalente_wh(
+                    tranches,
+                    energie_non_utilisee_matin_type_wh,
+                    energie_non_utilisee_soir_type_wh,
+                    majorations_ouvrable,
+                )
+                energie_majoree_weekend_wh = self._energie_majoree_equivalente_wh(
+                    tranches,
+                    energie_non_utilisee_matin_type_wh,
+                    energie_non_utilisee_soir_type_wh,
+                    majorations_weekend,
+                )
+
                 prix_total = quantite * type_p.prix_unitaire
-                prix_total_ouvrable_type = energie_non_utilisee_totale_type_wh * tarif_type["OUVRABLE"]
-                prix_total_weekend_type = energie_non_utilisee_totale_type_wh * tarif_type["WEEKEND"]
+                prix_total_ouvrable_type = (energie_non_utilisee_totale_type_wh + energie_majoree_ouvrable_wh) * tarif_type["OUVRABLE"]
+                prix_total_weekend_type = (energie_non_utilisee_totale_type_wh + energie_majoree_weekend_wh) * tarif_type["WEEKEND"]
+                taux_majoration_effective_ouvrable_pct = (
+                    (energie_majoree_ouvrable_wh / energie_non_utilisee_totale_type_wh) * 100.0
+                    if energie_non_utilisee_totale_type_wh > 0
+                    else 0.0
+                )
+                taux_majoration_effective_weekend_pct = (
+                    (energie_majoree_weekend_wh / energie_non_utilisee_totale_type_wh) * 100.0
+                    if energie_non_utilisee_totale_type_wh > 0
+                    else 0.0
+                )
 
                 prop = PropositionPanneau(
                     id_type_panneau=type_p.id,
@@ -191,6 +297,8 @@ class ServiceDimensionnement:
                     energie_non_utilisee_matin_wh=energie_non_utilisee_matin_type_wh,
                     energie_non_utilisee_soir_wh=energie_non_utilisee_soir_type_wh,
                     energie_non_utilisee_totale_wh=energie_non_utilisee_totale_type_wh,
+                    taux_majoration_effective_ouvrable_pct=taux_majoration_effective_ouvrable_pct,
+                    taux_majoration_effective_weekend_pct=taux_majoration_effective_weekend_pct,
                     prix_total_ouvrable_ar=prix_total_ouvrable_type,
                     prix_total_weekend_ar=prix_total_weekend_type,
                     est_recommande=False,

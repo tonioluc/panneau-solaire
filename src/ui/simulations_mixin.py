@@ -9,6 +9,7 @@ class SimulationsMixin:
             self.rafraichir_simulations()
             self.rafraichir_types_panneau()
             self.rafraichir_prix_energie()
+            self.rafraichir_majorations_heure_pointe()
         except Exception as exc:
             messagebox.showerror(
                 "Base de donnees",
