@@ -17,8 +17,68 @@ class PrixEnergieMixin:
             raise ValueError("Heure invalide. Utiliser HH:MM entre 00:00 et 23:59")
         return f"{h:02d}:{m:02d}"
 
+    def _create_prix_energie_scrollable_content(self) -> ttk.Frame:
+        canvas_bg = (
+            self.theme.get("surface_container_lowest")
+            if self.personalized_layout
+            else self.theme.get("surface")
+        )
+
+        root = ttk.Frame(self.tab_prix_energie, style="App.TFrame")
+        root.pack(fill="both", expand=True)
+
+        canvas = tk.Canvas(
+            root,
+            bg=canvas_bg,
+            highlightthickness=0,
+            bd=0,
+        )
+        scrollbar = ttk.Scrollbar(root, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        content = ttk.Frame(canvas, style="App.TFrame")
+        window_id = canvas.create_window((0, 0), window=content, anchor="nw")
+
+        content.bind(
+            "<Configure>",
+            lambda _e: canvas.configure(scrollregion=canvas.bbox("all")),
+        )
+        canvas.bind(
+            "<Configure>",
+            lambda e: canvas.itemconfigure(window_id, width=e.width),
+        )
+
+        def _bind_wheel(_event):
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+            canvas.bind_all("<Button-4>", _on_mousewheel_linux)
+            canvas.bind_all("<Button-5>", _on_mousewheel_linux)
+
+        def _unbind_wheel(_event):
+            canvas.unbind_all("<MouseWheel>")
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
+
+        def _on_mousewheel(event):
+            delta = -1 if event.delta > 0 else 1
+            canvas.yview_scroll(delta, "units")
+
+        def _on_mousewheel_linux(event):
+            delta = -1 if event.num == 4 else 1
+            canvas.yview_scroll(delta, "units")
+
+        canvas.bind("<Enter>", _bind_wheel)
+        canvas.bind("<Leave>", _unbind_wheel)
+
+        self._prix_energie_scroll_canvas = canvas
+        return content
+
     def _build_tab_prix_energie(self):
-        form_card = ttk.Frame(self.tab_prix_energie, style="Card.TFrame")
+        content = self._create_prix_energie_scrollable_content()
+
+        form_card = ttk.Frame(content, style="Card.TFrame")
         form_card.pack(fill="x", pady=(12, 10))
 
         ttk.Label(form_card, text="Configuration prix energie non utilisee", style="Section.TLabel").grid(
@@ -69,14 +129,14 @@ class PrixEnergieMixin:
         )
         self.btn_ajouter_prix.grid(row=1, column=6, padx=(10, 14), pady=6, sticky="e")
 
-        actions = ttk.Frame(self.tab_prix_energie, style="App.TFrame")
+        actions = ttk.Frame(content, style="App.TFrame")
         actions.pack(fill="x", pady=(0, 8))
 
         ttk.Button(actions, text="Modifier prix", command=self.modifier_prix_energie, style="Ghost.TButton").pack(side="left", padx=(0, 8))
         ttk.Button(actions, text="Annuler edition", command=self.annuler_edition_prix, style="Ghost.TButton").pack(side="left", padx=(0, 8))
         ttk.Button(actions, text="Supprimer prix", command=self.supprimer_prix_energie, style="Ghost.TButton").pack(side="left")
 
-        table_card = ttk.Frame(self.tab_prix_energie, style="WhiteCard.TFrame")
+        table_card = ttk.Frame(content, style="WhiteCard.TFrame")
         table_card.pack(fill="x", pady=(0, 12))
 
         self.tree_prix_energie = ttk.Treeview(
@@ -99,7 +159,7 @@ class PrixEnergieMixin:
         self.tree_prix_energie.pack(fill="both", expand=True, padx=12, pady=12)
         self.tree_prix_energie.bind("<Double-1>", self.charger_prix_pour_edition)
 
-        majoration_form_card = ttk.Frame(self.tab_prix_energie, style="Card.TFrame")
+        majoration_form_card = ttk.Frame(content, style="Card.TFrame")
         majoration_form_card.pack(fill="x", pady=(0, 10))
 
         ttk.Label(majoration_form_card, text="Majoration heures de pointe", style="Section.TLabel").grid(
@@ -158,7 +218,7 @@ class PrixEnergieMixin:
         )
         self.btn_ajouter_majoration.grid(row=1, column=8, padx=(10, 14), pady=6, sticky="e")
 
-        majoration_actions = ttk.Frame(self.tab_prix_energie, style="App.TFrame")
+        majoration_actions = ttk.Frame(content, style="App.TFrame")
         majoration_actions.pack(fill="x", pady=(0, 8))
 
         ttk.Button(
@@ -180,7 +240,7 @@ class PrixEnergieMixin:
             style="Ghost.TButton",
         ).pack(side="left")
 
-        majoration_table_card = ttk.Frame(self.tab_prix_energie, style="WhiteCard.TFrame")
+        majoration_table_card = ttk.Frame(content, style="WhiteCard.TFrame")
         majoration_table_card.pack(fill="both", expand=True)
 
         self.tree_majoration_heure_pointe = ttk.Treeview(
